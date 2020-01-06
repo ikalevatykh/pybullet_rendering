@@ -20,4 +20,8 @@ cd pybullet_rendering
 python setup.py install --bullet_dir "$BULLET_ROOT_DIR/bullet3"
 ```
 
+## Examples
 
+Example of using [Panda3D](https://www.panda3d.org/) for rendering in GUI mode:
+
+    python -m pybullet_rendering.examples.panda3d_gui

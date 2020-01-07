@@ -1,39 +1,53 @@
+import argparse
 import numpy as np
-import os
 import pybullet as pb
 import pybullet_data
 
 from pybullet_utils.bullet_client import BulletClient
-import pybullet_rendering as pr
+from pybullet_rendering import RenderingPlugin, Renderer, ShapeType
 
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
-from panda3d.core import LVector3, LVector4, LQuaternionf
+from panda3d.core import Vec3, Vec4, Quat, Vec2
 from panda3d.core import AmbientLight, DirectionalLight
 from panda3d.core import PointLight, Spotlight, PerspectiveLens
 from panda3d.core import Material, AntialiasAttrib
 from panda3d.core import loadPrcFileData
 
 
-class MyApp(pr.Renderer, ShowBase):
+parser = argparse.ArgumentParser("Example of using Panda3D for rendering")
+parser.add_argument("--multisamples", type=int, default=0, help="The minimum number of samples requested")
+parser.add_argument("--srgb", action="store_true", help="Enable gamma-correction")
+parser.add_argument("--shadow_resolution", type=int, default=1024, help="Shadow buffer resolution")
+parser.add_argument("--debug", action="store_true", help="Debug scene mode")
+args = parser.parse_args()
+
+
+loadPrcFileData("",
+    f"""
+    framebuffer-srgb  {1 if args.srgb else 0}
+    framebuffer-multisample {1 if args.multisamples else 0}
+    multisamples {args.multisamples}
+    model-path {pybullet_data.getDataPath()}
+    show-frame-rate-meter 1
+    gl-compile-and-execute 1
+    gl-use-bindless-texture 1
+    prefer-texture-buffer 1
+    """)
+
+
+class MyApp(Renderer, ShowBase):
 
     def __init__(self):
-        pr.Renderer.__init__(self)  # <- important
-
-        loadPrcFileData("",
-            """framebuffer-multisample 1
-            multisamples 8""")
-
-        # framebuffer-multisample 1
-        # multisamples 2
-
+        Renderer.__init__(self)  # <- important
         ShowBase.__init__(self)
 
         client = BulletClient(pb.DIRECT)
         client.setAdditionalSearchPath(pybullet_data.getDataPath())
+        self.client = client
 
         # just two steps to bind external renderer
-        plugin = pr.RenderingPlugin(client)
+        plugin = RenderingPlugin(client)
         plugin.setLocalRenderer(self)
 
         # setup scene
@@ -41,20 +55,16 @@ class MyApp(pr.Renderer, ShowBase):
         self.setupScene(client)
         self.setupLights()
         self.render.setAntialias(AntialiasAttrib.MAuto)
-        self.render.setDepthOffset(1)
+        # self.render.setDepthOffset(1)
         self.render.setShaderAuto()
-
-        # this call trigger updateScene and draw methods
-        client.getCameraImage(240, 320)
-
-        self.client = client
 
         # setup periodic tasks
         self.time = 0
         self.taskMgr.add(self.spinCameraTask, "SpinCameraTask")
         self.taskMgr.add(self.stepSimulationTask, "StepSimulationTask")
 
-        # base.oobe()
+        if args.debug:
+            base.oobe()
 
     def setupScene(self, client):
         """Init pybullet scene"""
@@ -94,11 +104,12 @@ class MyApp(pr.Renderer, ShowBase):
         dlight = DirectionalLight('dlight')
         dlight.setColor((0.8, 0.8, 0.5, 1))
         lens = PerspectiveLens()
-        lens.setNearFar(0.1, 100)
+        lens.setFilmSize(Vec2(30, 30))
+        lens.setNearFar(1, 10)
         dlight.setLens(lens)
-        dlight.setShadowCaster(True, 512, 512)
+        dlight.setShadowCaster(True, args.shadow_resolution, args.shadow_resolution)
         dlnp = self.render.attachNewNode(dlight)
-        dlnp.setPos(0, -1, 2)
+        dlnp.setPos(2, -2, 3)
         dlnp.lookAt(0, 0, 0)
         self.render.setLight(dlnp)
 
@@ -106,9 +117,10 @@ class MyApp(pr.Renderer, ShowBase):
         slight = Spotlight('slight')
         slight.setColor((0.7, 0.7, 1.0, 1))
         lens = PerspectiveLens()
-        lens.setNearFar(0.1, 100)
+        lens.setFilmSize(Vec2(30, 30))
+        lens.setNearFar(1, 10)
         slight.setLens(lens)
-        slight.setShadowCaster(True, 512, 512)
+        slight.setShadowCaster(True, args.shadow_resolution, args.shadow_resolution)
         slnp = self.render.attachNewNode(slight)
         slnp.setPos(1, 1, 2)
         slnp.lookAt(0, 0, 0)
@@ -126,7 +138,8 @@ class MyApp(pr.Renderer, ShowBase):
         """Update light position"""
         if task.time - self.time > 1 / 240.:
             self.client.stepSimulation()
-            self.client.getCameraImage(240, 320)
+            # this call trigger updateScene (if necessary) and draw methods
+            self.client.getCameraImage(1, 1)
             self.time = task.time
         return Task.cont
 
@@ -142,12 +155,13 @@ class MyApp(pr.Renderer, ShowBase):
             self.nodes[k] = node
 
             for j, shape in enumerate(v.shapes):
-                if shape.type == pr.ShapeType.Mesh:
+                has_materials = False
+
+                if shape.type == ShapeType.Mesh:
                     filename = shape.mesh.filename
                     has_materials = shape.mesh.use_materials
-                elif shape.type == pr.ShapeType.Cube:
-                    filename = os.path.join(pybullet_data.getDataPath(), 'cube.obj')
-                    has_materials = False
+                elif shape.type == ShapeType.Cube:
+                    filename = 'cube.obj'
                 else:
                     print('Unknown shape type: {}'.format(shape.type))
                     continue
@@ -158,9 +172,9 @@ class MyApp(pr.Renderer, ShowBase):
                 if not has_materials:
                     # set material
                     material = Material()
-                    material.setAmbient(LVector4(*shape.material.diffuse_color))
-                    material.setDiffuse(LVector4(*shape.material.diffuse_color))
-                    material.setSpecular(LVector3(*shape.material.specular_color))
+                    material.setAmbient(Vec4(*shape.material.diffuse_color))
+                    material.setDiffuse(Vec4(*shape.material.diffuse_color))
+                    material.setSpecular(Vec3(*shape.material.specular_color))
                     material.setShininess(5.0)
                     model.setMaterial(material, 1)
                     # set texture
@@ -172,7 +186,7 @@ class MyApp(pr.Renderer, ShowBase):
                 pose = shape.pose
                 model.reparentTo(node)
                 model.setPos(*shape.pose.origin)
-                model.setQuat(LQuaternionf(*shape.pose.quaternion))
+                model.setQuat(Quat(*shape.pose.quaternion))
                 model.setScale(*shape.pose.scale)
 
     def draw(self, scene_state, scene_view):
@@ -188,11 +202,11 @@ class MyApp(pr.Renderer, ShowBase):
         for k, node in self.nodes.items():
             pose = scene_state.pose(k)
             node.setPos(*pose.origin)
-            node.setQuat(LQuaternionf(*pose.quaternion))
+            node.setQuat(Quat(*pose.quaternion))
             node.setScale(*pose.scale)
 
+        base.setBackgroundColor(*scene_view.background_color)
         return False  # <- no real drawing
-
 
 app = MyApp()
 app.run()

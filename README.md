@@ -1,5 +1,5 @@
 # pybullet_rendering
-External rendering for PyBullet
+External rendering for [PyBullet](https://github.com/bulletphysics/bullet3/) simulator
 
 ## Install
 
@@ -24,4 +24,4 @@ python setup.py install --bullet_dir "$BULLET_ROOT_DIR/bullet3"
 
 Example of using [Panda3D](https://www.panda3d.org/) for rendering in GUI mode:
 
-    python -m pybullet_rendering.examples.panda3d_gui
+    python -m pybullet_rendering.examples.panda3d_gui --multisamples 8

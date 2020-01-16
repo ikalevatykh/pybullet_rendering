@@ -6,7 +6,7 @@
 
 #include "Node.h"
 // #include "SceneAssets.h"
-#include <utils/Serialization.h>
+#include <utils/serialization.h>
 
 #include <algorithm>
 #include <map>
@@ -52,11 +52,10 @@ class SceneGraph
      */
     void changeShapeTexture(int nodeId, int shapeIndex, int textureId)
     {
-        _nodes
-            .at(nodeId) //
-            .shape(shapeIndex)
-            .material()
-            .diffuseTexture(textureId);
+        auto& shape = _nodes.at(nodeId).shape(shapeIndex);
+        auto material = shape.material();
+        material.setDiffuseTexture(textureId);
+        shape.setMaterial(material);
     }
 
     /**
@@ -68,11 +67,10 @@ class SceneGraph
      */
     void changeShapeColor(int nodeId, int shapeIndex, const Color4f& color)
     {
-        _nodes
-            .at(nodeId) //
-            .shape(shapeIndex)
-            .material()
-            .diffuseColor(color);
+        auto& shape = _nodes.at(nodeId).shape(shapeIndex);
+        auto material = shape.material();
+        material.setDiffuseColor(color);
+        shape.setMaterial(material);
     }
 
     /**

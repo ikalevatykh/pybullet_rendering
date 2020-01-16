@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "Math.h"
-#include <utils/Serialization.h>
+#include <utils/math.h>
+#include <utils/serialization.h>
 
 #include <string>
 #include <vector>
@@ -23,7 +23,7 @@ class Texture
      * @brief Construct a new Texture object
      *
      */
-    Texture() noexcept = default;
+    Texture() noexcept {};
 
     /**
      * @brief Construct a new Texture object

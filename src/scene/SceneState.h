@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "Math.h"
-#include <utils/Serialization.h>
+#include <utils/math.h>
+#include <utils/serialization.h>
 
 #include <map>
 
@@ -47,6 +47,9 @@ class SceneState
      */
     int size() const { return _poses.size(); }
 
+
+    const std::map<int, Affine3f>& poses() const { return _poses; }
+
     /**
      * @brief Pose for a specific node
      *
@@ -62,7 +65,7 @@ class SceneState
      * @param id - unique node id
      * @throw std::out_of_range - if no such element exists
      */
-    void pose(int nodeId, const Affine3f& pose) { _poses.at(nodeId) = pose; }
+    void setPose(int nodeId, const Affine3f& pose) { _poses.at(nodeId) = pose; }
 
     /**
      * @brief Comparison operators

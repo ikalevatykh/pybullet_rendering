@@ -5,7 +5,7 @@
 #pragma once
 
 #include "Shape.h"
-#include <utils/Serialization.h>
+#include <utils/serialization.h>
 
 #include <vector>
 
@@ -24,27 +24,27 @@ class Node
     Node() noexcept = default;
 
     /**
-    * @brief Construct a new Node object
-    */
-    Node(int body, int link, std::vector<Shape> shapes, bool cacheGraphics)
-        : _body(body), _link(link), _shapes(std::move(shapes)), _cache(cacheGraphics)
+     * @brief Construct a new Node object
+     */
+    Node(int body, int link, std::vector<Shape> shapes, bool noCache = false)
+        : _body(body), _link(link), _noCache(noCache), _shapes(std::move(shapes))
     {
     }
 
     /**
-    * @brief Body index
-    */
+     * @brief Body index
+     */
     int body() const { return _body; }
 
     /**
-    * @brief Link index
-    */
+     * @brief Link index
+     */
     int link() const { return _link; }
 
     /**
-     * @brief Enable or not caching for shapes inside this node
+     * @brief Disable caching for shapes associated with this node
      */
-    bool cacheGraphics() const { return _cache; }
+    bool noCache() const { return _noCache; }
 
     /**
      * @brief Vector of object's shapes
@@ -54,12 +54,12 @@ class Node
     const std::vector<Shape>& shapes() const { return _shapes; }
 
     /**
-    * @brief Specific shape
-    *
-    * @param index - shape index
-    * @throw std::out_of_range - if no such element exists
-    * @return Shape&
-    */
+     * @brief Specific shape
+     *
+     * @param index - shape index
+     * @throw std::out_of_range - if no such element exists
+     * @return Shape&
+     */
     Shape& shape(int index) { return _shapes.at(index); }
     /** @overload */
     const Shape& shape(int index) const { return _shapes.at(index); }
@@ -69,7 +69,7 @@ class Node
      */
     bool operator==(const Node& other) const
     {
-        return _body == other._body && _link == other._link && _cache == other._cache &&
+        return _body == other._body && _link == other._link && _noCache == other._noCache &&
                _shapes == other._shapes;
     }
     bool operator!=(const Node& other) const { return !(*this == other); }
@@ -77,10 +77,10 @@ class Node
   private:
     int _body;
     int _link;
-    bool _cache;
+    bool _noCache;
     std::vector<Shape> _shapes;
 
-    NOP_STRUCTURE(Node, _body, _link, _cache, _shapes);
+    NOP_STRUCTURE(Node, _body, _link, _noCache, _shapes);
 };
 
 } // namespace scene

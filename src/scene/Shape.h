@@ -5,10 +5,10 @@
 #pragma once
 
 #include "Material.h"
-#include "Math.h"
 #include "Mesh.h"
+#include <utils/math.h>
 
-#include <utils/Serialization.h>
+#include <utils/serialization.h>
 
 namespace scene {
 
@@ -38,16 +38,19 @@ class Shape
      * @brief Construct a new Scene Object object
      *
      */
-    Shape() : _type(ShapeType::Unknown) {}
+    Shape() : _type(ShapeType::Unknown), _hasMaterial(false) {}
 
     /**
      * @brief Construct a new Shape object
      *
      * @param mesh - mesh
-     * @param matrix - shape poseation depending parent node
+     * @param pose - shape position depending parent node
+     * @param hasMaterial - shape has material
+     * @param material - shape material
      */
-    Shape(const Mesh& mesh, const Affine3f& pose, const Material& material)
-        : _type(ShapeType::Mesh), _mesh(mesh), _pose(pose), _material(material)
+    Shape(const Mesh& mesh, const Affine3f& pose, bool hasMaterial, const Material& material)
+        : _type(ShapeType::Mesh), _mesh(mesh), _pose(pose), _hasMaterial(hasMaterial),
+          _material(material)
     {
     }
 
@@ -58,7 +61,7 @@ class Shape
      * @param matrix - shape poseation depending parent node
      */
     Shape(ShapeType type, const Affine3f& pose, const Material& material)
-        : _type(type), _pose(pose), _material(material)
+        : _type(type), _pose(pose), _hasMaterial(true), _material(material)
     {
     }
 
@@ -73,21 +76,9 @@ class Shape
     ShapeType type() const { return _type; }
 
     /**
-     * @brief Shape has specific type or not
-     */
-    bool hasType(ShapeType type) const { return _type == type; }
-
-    /**
      * @brief Shape pose depending on a parent object
      */
     const Affine3f& pose() const { return _pose; }
-
-    /**
-     * @brief Associated material
-     */
-    Material& material() { return _material; }
-    /** @overload */
-    const Material& material() const { return _material; }
 
     /**
      * @brief Shape mesh description (only for ShapeType::Mesh shape)
@@ -95,22 +86,39 @@ class Shape
     const Mesh& mesh() const { return _mesh; }
 
     /**
+     * @brief If shape has material
+     */
+    bool hasMaterial() const { return _hasMaterial; }
+
+    /**
+     * @brief Associated material
+     */
+    const Material& material() const { return _material; }
+    /** @overload */
+    void setMaterial(const Material& material)
+    {
+        _hasMaterial = true;
+        _material = material;
+    }
+
+    /**
      * @brief Comparison operators
      */
     bool operator==(const Shape& other) const
     {
-        return _type == other._type && _pose == other._pose && _material == other._material &&
-               _mesh == other._mesh;
+        return _type == other._type && _pose == other._pose && _mesh == other._mesh &&
+               _hasMaterial == other._hasMaterial && _material == other._material;
     }
     bool operator!=(const Shape& other) const { return !(*this == other); }
 
   private:
     ShapeType _type;
     Affine3f _pose;
+    bool _hasMaterial;
     Material _material;
     Mesh _mesh;
 
-    NOP_STRUCTURE(Shape, _type, _pose, _material, _mesh);
+    NOP_STRUCTURE(Shape, _type, _pose, _hasMaterial, _material, _mesh);
 };
 
 } // namespace scene

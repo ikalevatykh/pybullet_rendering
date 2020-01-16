@@ -6,6 +6,8 @@
 namespace py = pybind11;
 using namespace py::literals;
 
+#include "utils/utils.h"
+#include "plugin/plugin.h"
 #include "render/render.h"
 #include "scene/scene.h"
 
@@ -16,6 +18,8 @@ PYBIND11_MODULE(bindings, m)
 {
     m.doc() = "PyBullet rendering plugin binding";
 
+    bindPlugin(m);
     bindRender(m);
     bindScene(m);
+    bindUtils(m);
 }

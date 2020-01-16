@@ -1,8 +1,12 @@
+// Copyright (c) 2019-2020 INRIA.
+// This source code is licensed under the LGPLv3 license found in the
+// LICENSE file in the root directory of this source tree.
+
 #pragma once
 
 // project imports
-#include <scene/Math.h>
 #include <scene/SceneGraph.h>
+#include <utils/math.h>
 
 // bullet imports
 #include <Importers/ImportURDFDemo/UrdfParser.h>
@@ -18,7 +22,7 @@
  * @param frame - transformation
  * @param scale - scale vector
  */
-inline void setPose(scene::Affine3f& pose, const btTransform& frame, const btVector3& scale)
+inline Affine3f makePose(const btTransform& frame, const btVector3& scale)
 {
     const auto& origin = frame.getOrigin();
     const auto& basis = frame.getBasis();
@@ -26,9 +30,11 @@ inline void setPose(scene::Affine3f& pose, const btTransform& frame, const btVec
     btQuaternion quat;
     basis.getRotation(quat);
 
+    Affine3f pose;
     pose.origin = {float(origin.x()), float(origin.y()), float(origin.z())};
     pose.quaternion = {float(quat.getW()), float(quat.x()), float(quat.y()), float(quat.z())};
     pose.scale = {float(scale.x()), float(scale.y()), float(scale.z())};
+    return pose;
 }
 
 /**
@@ -45,7 +51,6 @@ inline scene::Shape makeShape(const UrdfShape& urdfShape, const UrdfMaterial& ur
                               scene::SceneGraph& graph)
 {
     auto frame = localInertiaFrame.inverse() * urdfShape.m_linkLocalFrame;
-    scene::Affine3f pose;
 
     const auto& fname = urdfMaterial.m_textureFilename;
     const int textureId = fname.empty() ? -1 : graph.registerTexture(scene::Texture{fname});
@@ -63,31 +68,31 @@ inline scene::Shape makeShape(const UrdfShape& urdfShape, const UrdfMaterial& ur
             /** @todo populate mesh from data */
         }
         else {
-            const bool useMaterial = flags & URDF_USE_MATERIAL_COLORS_FROM_MTL;
-            const auto mesh = scene::Mesh{urdfGeometry.m_meshFileName, useMaterial};
-            setPose(pose, frame, urdfGeometry.m_meshScale);
-            return scene::Shape{mesh, pose, material};
+            const auto mesh = scene::Mesh{urdfGeometry.m_meshFileName};
+            const auto pose = makePose(frame, urdfGeometry.m_meshScale);
+            const bool hasMaterial = !(flags & URDF_USE_MATERIAL_COLORS_FROM_MTL);
+            return scene::Shape{mesh, pose, hasMaterial, material};
         }
     }
     else if (URDF_GEOM_BOX == urdfGeometry.m_type) {
-        setPose(pose, frame, urdfGeometry.m_boxSize);
+        const auto pose = makePose(frame, urdfGeometry.m_boxSize);
         return scene::Shape{scene::ShapeType::Cube, pose, material};
     }
     else if (URDF_GEOM_SPHERE == urdfGeometry.m_type) {
         const auto r = urdfGeometry.m_sphereRadius;
-        setPose(pose, frame, {r, r, r});
+        const auto pose = makePose(frame, {r, r, r});
         return scene::Shape{scene::ShapeType::Sphere, pose, material};
     }
     else if (URDF_GEOM_CYLINDER == urdfGeometry.m_type) {
         const auto r = urdfGeometry.m_capsuleRadius;
         const auto h = urdfGeometry.m_capsuleHeight;
-        setPose(pose, frame, {r, r, h});
+        const auto pose = makePose(frame, {r, r, h});
         return scene::Shape{scene::ShapeType::Cylinder, pose, material};
     }
     else if (URDF_GEOM_CAPSULE == urdfGeometry.m_type) {
         const auto r = urdfGeometry.m_capsuleRadius;
         const auto h = urdfGeometry.m_capsuleHeight;
-        setPose(pose, frame, {r, r, h});
+        const auto pose = makePose(frame, {r, r, h});
         return scene::Shape{scene::ShapeType::Capsule, pose, material};
     }
     else if (URDF_GEOM_PLANE == urdfGeometry.m_type) {
@@ -98,11 +103,11 @@ inline scene::Shape makeShape(const UrdfShape& urdfShape, const UrdfMaterial& ur
             const auto quat = btQuaternion(axis, btAsin(axis.length()));
             frame = frame * btTransform(quat);
         }
-        setPose(pose, frame, {1, 1, 1});
+        const auto pose = makePose(frame, {1, 1, 1});
         return scene::Shape{scene::ShapeType::Plane, pose, material};
     }
 
-    return scene::Shape{scene::ShapeType::Unknown, pose, material};
+    return scene::Shape{};
 }
 
 /**

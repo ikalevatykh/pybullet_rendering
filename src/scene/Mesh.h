@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "Math.h"
-#include <utils/Serialization.h>
+#include <utils/math.h>
+#include <utils/serialization.h>
 
 #include <string>
 
@@ -28,12 +28,8 @@ class Mesh
      * @brief Construct a new Mesh object
      *
      * @param filename - mesh model file on disk
-     * @param useMaterials - use or not materials associated with this mesh
      */
-    Mesh(std::string filename, bool useMaterials)
-        : _inMemory(false), _filename(std::move(filename)), _useMaterials(useMaterials)
-    {
-    }
+    Mesh(std::string filename) : _inMemory(false), _filename(std::move(filename)) {}
 
     /**
      * @brief Flag: mesh geometry data stored in memory or on a disk
@@ -47,25 +43,19 @@ class Mesh
     const std::string& filename() const { return _filename; }
 
     /**
-     * @brief Flag: use or not materials associated with this mesh
-     */
-    bool useMaterials() const { return _useMaterials; }
-
-    /**
      * @brief Comparison operators
      */
     bool operator==(const Mesh& other) const
     {
-        return _filename == other._filename && _useMaterials == other._useMaterials;
+        return _inMemory == other._inMemory && _filename == other._filename;
     }
     bool operator!=(const Mesh& other) const { return !(*this == other); }
 
   private:
     bool _inMemory;
     std::string _filename;
-    bool _useMaterials;
 
-    NOP_STRUCTURE(Mesh, _filename, _useMaterials);
+    NOP_STRUCTURE(Mesh, _inMemory, _filename);
 };
 
 } // namespace scene

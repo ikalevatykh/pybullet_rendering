@@ -4,14 +4,11 @@
 
 #pragma once
 
-#include <utils/Serialization.h>
+#include "serialization.h"
 
 #include <array>
-#include <tuple>
+#include <cmath>
 
-namespace scene {
-
-// typedef std::tuple<int, int> Size2i;
 typedef std::array<int, 2> Size2i;
 typedef std::array<float, 3> Vector3f;
 typedef std::array<float, 4> Vector4f;
@@ -30,6 +27,30 @@ struct Affine3f {
 
     static constexpr Affine3f Identity() { return Affine3f{{0, 0, 0}, {1, 0, 0, 0}, {1, 1, 1}}; }
 
+    Vector3f euler() const
+    {
+        const float qw = quaternion[0], qx = quaternion[1], //
+            qy = quaternion[2], qz = quaternion[3];
+
+        // roll (x-axis rotation)
+        double sinr_cosp = 2 * (qw * qx + qy * qz);
+        double cosr_cosp = 1 - 2 * (qx * qx + qy * qy);
+        double roll = std::atan2(sinr_cosp, cosr_cosp);
+
+        // pitch (y-axis rotation)
+        double sinp = 2 * (qw * qy - qz * qx);
+        double pitch = (std::abs(sinp) >= 1) //
+                           ? std::copysign(M_PI / 2, sinp)
+                           : std::asin(sinp);
+
+        // yaw (z-axis rotation)
+        double siny_cosp = 2 * (qw * qz + qx * qy);
+        double cosy_cosp = 1 - 2 * (qy * qy + qz * qz);
+        double yaw = std::atan2(siny_cosp, cosy_cosp);
+
+        return {float(yaw), float(roll), float(pitch)};
+    }
+
     /**
      * @brief Comparison operators
      */
@@ -42,5 +63,3 @@ struct Affine3f {
   private:
     NOP_STRUCTURE(Affine3f, origin, quaternion, scale);
 };
-
-} // namespace scene

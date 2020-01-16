@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "Math.h"
-#include <utils/Serialization.h>
+#include <utils/math.h>
+#include <utils/serialization.h>
 
 namespace scene {
 
@@ -21,14 +21,14 @@ class Camera
      */
     const Matrix4f& projMatrix() const { return _projMatrix; }
     /** @overload */
-    void projMatrix(const Matrix4f& m) { _projMatrix = m; }
+    void setProjMatrix(const Matrix4f& m) { _projMatrix = m; }
 
     /**
      * @brief Camera view 4x4 matrix.
      */
     const Matrix4f& viewMatrix() const { return _viewMatrix; }
     /** @overload */
-    void viewMatrix(const Matrix4f& m) { _viewMatrix = m; }
+    void setViewMatrix(const Matrix4f& m) { _viewMatrix = m; }
 
     /**
      * @brief Comparison operator

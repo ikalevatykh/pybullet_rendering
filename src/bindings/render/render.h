@@ -2,23 +2,38 @@
 
 #include "PyRenderer.h"
 
-extern void gSetRenderer(const std::shared_ptr<render::BaseRenderer>& renderer,
-                         int physicsClientId);
+#include <pybind11/numpy.h>
 
 void bindRender(py::module& m)
 {
     using namespace render;
 
-    py::class_<render::BaseRenderer, PyRenderer, std::shared_ptr<BaseRenderer>>(m, "Renderer")
+    // Renderer
+    py::class_<BaseRenderer, PyRenderer, std::shared_ptr<BaseRenderer>>(m, "Renderer")
         .def(py::init<>())
-        .def("updateScene", &BaseRenderer::updateScene,
-             R"(Update a scene using scene graph description)")
-        .def("draw", &BaseRenderer::draw,
-             R"(Draw a scene using scene state and view description)");
+        .def("update_scene", &BaseRenderer::updateScene,
+             "Update a scene using scene graph description")
+        .def("render_frame", &BaseRenderer::renderFrame,
+             "Render a scene using scene state and view settings");
 
-    m.def("setRenderer", //
-          [](std::shared_ptr<BaseRenderer>& render, int physicsClientId) {
-              gSetRenderer(render, physicsClientId);
-          },
-          R"(Set renderer for a specific client)");
+    // FrameData
+    py::class_<FrameData>(m, "FrameData")
+        .def_property_readonly(
+            "color_img",
+            [](FrameData& self) {
+                return py::array_t<uint8_t>({self.rows, self.cols, 4}, self.color, py::cast(self));
+            },
+            py::return_value_policy::reference_internal, "Color image memory buffer")
+        .def_property_readonly(
+            "depth_img",
+            [](FrameData& self) {
+                return py::array_t<float>({self.rows, self.cols}, self.depth, py::cast(self));
+            },
+            py::return_value_policy::reference_internal, "Depth image memory buffer")
+        .def_property_readonly(
+            "mask_img",
+            [](FrameData& self) {
+                return py::array_t<int>({self.rows, self.cols}, self.mask, py::cast(self));
+            },
+            py::return_value_policy::reference_internal, "Mask image memory buffer");
 }

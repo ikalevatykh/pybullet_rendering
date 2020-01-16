@@ -9,8 +9,7 @@
 class PyRenderer : public render::BaseRenderer
 {
   public:
-    /* Inherit the constructors */
-    // using render::BaseRenderer::BaseRenderer;
+    /* Default constructor */
     PyRenderer() {}
 
     /**
@@ -21,18 +20,25 @@ class PyRenderer : public render::BaseRenderer
      */
     virtual void updateScene(const scene::SceneGraph& sceneGraph, bool materialsOnly)
     {
-        PYBIND11_OVERLOAD_PURE(void, render::BaseRenderer, updateScene, sceneGraph, materialsOnly);
-    }
+        // use "_INT" version as a workaround to pass arguments without copying
+        PYBIND11_OVERLOAD_INT(void, render::BaseRenderer, "update_scene", &sceneGraph,
+                              &materialsOnly);
+    };
 
     /**
-     * @brief Draw a scene at state \p sceneState with a view \p sceneView
+     * @brief Render a scene at state \p sceneState with a view settings \p sceneView
      *
      * @param sceneState - scene state, e.g. transformations of all objects
-     * @param sceneView - view, e.g. camera, light, viewport parameters
-     * @return bool - success
+     * @param sceneView - view settings, e.g. camera, light, viewport size
+     * @param outputFrame - rendered images
+     *
+     * @return True if rendered
      */
-    virtual bool draw(const scene::SceneState& sceneState, const scene::SceneView& sceneView)
+    virtual bool renderFrame(const scene::SceneState& sceneState, const scene::SceneView& sceneView,
+                             render::FrameData& outputFrame)
     {
-        PYBIND11_OVERLOAD_PURE(bool, render::BaseRenderer, draw, sceneState, sceneView);
-    }
+        PYBIND11_OVERLOAD_INT(bool, render::BaseRenderer, "render_frame", &sceneState, &sceneView,
+                              &outputFrame);
+        return false;
+    };
 };

@@ -1,3 +1,7 @@
+// Copyright (c) 2019-2020 INRIA.
+// This source code is licensed under the LGPLv3 license found in the
+// LICENSE file in the root directory of this source tree.
+
 #pragma once
 
 #include <scene/SceneGraph.h>
@@ -6,44 +10,17 @@
 
 namespace render {
 
-// /**
-//  * @brief Rendered frame
-//  *
-//  * Frame may contain color, depth and mask planes
-//  */
-// class BaseFrame
-// {
-//   public:
-//     /**
-//      * @brief Destroy the Base Frame object
-//      *
-//      */
-//     virtual ~BaseFrame(){};
-
-//     /**
-//      * @brief Read color frame to a CPU memory buffer
-//      *
-//      * @param dest - pointer to a destination buffer
-//      * @param size - destination buffer length
-//      */
-//     virtual bool readColor(uint8_t* dest, int size) = 0;
-
-//     /**
-//      * @brief  Read depth frame to a CPU memory buffer
-//      *
-//      * @param dest - pointer to a destination buffer
-//      * @param size - destination buffer length
-//      */
-//     virtual bool readDepth(float* dest, int size) = 0;
-
-//     /**
-//      * @brief  Read mask frame to a CPU memory buffer
-//      *
-//      * @param dest - pointer to a destination buffer
-//      * @param size - destination buffer length
-//      */
-//     virtual bool readMask(uint32_t* dest, int size) = 0;
-// };
+/**
+ * @brief Memory buffer to write rendered frame
+ *
+ */
+struct FrameData {
+    const int cols; //<- image width
+    const int rows; //<- image height
+    uint8_t* const color; //<- pointer to the color plane memory
+    float* const depth; //<- pointer to the depth plane memory
+    int* const mask; //<- pointer to the mask plane memory
+};
 
 /**
  * @brief Interface for all renderers
@@ -67,13 +44,16 @@ class BaseRenderer
     virtual void updateScene(const scene::SceneGraph& sceneGraph, bool materialsOnly) = 0;
 
     /**
-     * @brief Draw a scene at state \p sceneState with a view \p sceneView
+     * @brief Render a scene at state \p sceneState with a view settings \p sceneView
      *
      * @param sceneState - scene state, e.g. transformations of all objects
-     * @param sceneView - view, e.g. camera, light, viewport parameters
-     * @return bool - success
+     * @param sceneView - view settings, e.g. camera, light, viewport size
+     * @param outputFrame - rendered images
+     *
+     * @return True if rendered
      */
-    virtual bool draw(const scene::SceneState& sceneState, const scene::SceneView& sceneView) = 0;
+    virtual bool renderFrame(const scene::SceneState& sceneState, const scene::SceneView& sceneView,
+                             FrameData& outputFrame) = 0;
 };
 
 } // namespace render

@@ -2,27 +2,15 @@
 
 #include <scene/SceneGraph.h>
 
+PYBIND11_MAKE_OPAQUE(std::map<int, scene::Node>);
+PYBIND11_MAKE_OPAQUE(std::vector<scene::Shape>);
+
 void bindSceneGraph(py::module& m)
 {
     using namespace scene;
 
-    // Affine3f
-    py::class_<Affine3f>(m, "Affine")
-        .def_readonly("origin", &Affine3f::origin, R"(Origin)")
-        .def_readonly("quaternion", &Affine3f::quaternion, R"(Rotation)")
-        .def_readonly("scale", &Affine3f::scale, R"(Scale)");
-
-    // Material
-    py::class_<Material>(m, "Material")
-        .def_property_readonly("diffuse_color",
-                               py::overload_cast<>(&Material::diffuseColor, py::const_),
-                               R"(Diffuse color)")
-        .def_property_readonly("specular_color",
-                               py::overload_cast<>(&Material::specularColor, py::const_),
-                               R"(Specular color)")
-        .def_property_readonly("diffuse_texture",
-                               py::overload_cast<>(&Material::diffuseTexture, py::const_),
-                               R"(Texture index)");
+    py::bind_map<std::map<int, Node>>(m, "MapIntNode");
+    py::bind_vector<std::vector<Shape>>(m, "VectorShape");
 
     // ShapeType enum
     py::enum_<ShapeType>(m, "ShapeType", py::arithmetic())
@@ -34,39 +22,63 @@ void bindSceneGraph(py::module& m)
         .value("Cylinder", ShapeType::Cylinder)
         .value("Capsule", ShapeType::Capsule);
 
+    // Material
+    py::class_<Material>(m, "Material")
+        .def_property("diffuse_color", &Material::diffuseColor, &Material::setDiffuseColor,
+                      "Diffuse color")
+        .def_property("specular_color", &Material::specularColor, &Material::setSpecularColor,
+                      "Specular color")
+        .def_property("diffuse_texture", &Material::diffuseTexture, &Material::setDiffuseTexture,
+                      "Texture index")
+        // operators
+        .def(py::self == py::self)
+        .def(py::self != py::self);
+
     // Texture
     py::class_<Texture>(m, "Texture")
-        .def_property_readonly("filename", &Texture::filename,
-                               R"(Texture filename)");
+        .def_property_readonly("filename", &Texture::filename, "Texture filename")
+        // operators
+        .def(py::self == py::self)
+        .def(py::self != py::self);
 
     // Mesh
-    py::class_<Mesh>(m, "Mesh") //
-        .def_property_readonly("filename", &Mesh::filename,
-                               R"(Mesh filename)")
-        .def_property_readonly("use_materials", &Mesh::useMaterials,
-                               R"(Use materials from model file)");
+    py::class_<Mesh>(m, "Mesh")
+        .def_property_readonly("filename", &Mesh::filename, "Mesh filename")
+        // operators
+        .def(py::self == py::self)
+        .def(py::self != py::self);
 
     // Shape
     py::class_<Shape>(m, "Shape")
-        .def_property_readonly("type", &Shape::type, R"(Shape type)")
-        .def_property_readonly("pose", &Shape::pose, R"(Shape pose relative to a parent node)")
-        .def_property_readonly("mesh", &Shape::mesh, R"(Mesh description)")
-        .def_property_readonly("material", py::overload_cast<>(&Shape::material, py::const_),
-                               R"(Shape material)");
+        .def_property_readonly("type", &Shape::type, "Shape type")
+        .def_property_readonly("pose", &Shape::pose, "Shape pose relative to a parent node")
+        .def_property_readonly("mesh", &Shape::mesh, "Mesh description")
+        .def_property_readonly("has_material", &Shape::hasMaterial, "Shape has material")
+        .def_property("material", &Shape::material, &Shape::setMaterial, "Shape material")
+        // operators
+        .def(py::self == py::self)
+        .def(py::self != py::self);
 
     // Node
     py::class_<Node>(m, "Node")
-        .def_property_readonly("body", &Node::body, R"(Body index)")
-        .def_property_readonly("link", &Node::link, R"(Link index)")
-        .def_property_readonly("cache_graphics", &Node::cacheGraphics,
-                               R"(Enable or not caching for child shapes)")
-        .def_property_readonly("shapes", &Node::shapes, R"(List of node's child shapes)",
-                               py::return_value_policy::reference_internal);
+        .def_property_readonly("body", &Node::body, "Body index")
+        .def_property_readonly("link", &Node::link, "Link index")
+        .def_property_readonly("no_cache", &Node::noCache, "Disable caching for child shapes")
+        .def_property_readonly("shapes", &Node::shapes, "List of node's child shapes",
+                               py::return_value_policy::reference_internal)
+        // operators
+        .def(py::self == py::self)
+        .def(py::self != py::self);
 
     // SceneGraph
     py::class_<SceneGraph>(m, "SceneGraph")
-        .def_property_readonly("nodes", &SceneGraph::nodes, R"(Scene nodes)",
+        .def_property_readonly("nodes", &SceneGraph::nodes, "Scene nodes",
                                py::return_value_policy::reference_internal)
-        .def("texture", &SceneGraph::texture, R"(Registered texture)",
-             py::return_value_policy::reference_internal);
+        .def("texture", &SceneGraph::texture, "Registered texture",
+             py::return_value_policy::reference_internal)
+        // operators
+        .def(py::self == py::self)
+        .def(py::self != py::self)
+        // pickle
+        .def(pickle<SceneGraph>());
 }

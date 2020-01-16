@@ -1,3 +1,7 @@
+// Copyright (c) 2019-2020 INRIA.
+// This source code is licensed under the LGPLv3 license found in the
+// LICENSE file in the root directory of this source tree.
+
 #include "RenderingInterface.h"
 #include "utils.h"
 #include <scene/Shape.h>
@@ -30,7 +34,6 @@ void RenderingInterface::resetAll()
     _syncMaterials = true;
     _sceneGraph.clear();
     _sceneState.clear();
-    _sceneView.reset();
     _visualShapes.clear();
     _objectIndices.clear();
 }
@@ -88,8 +91,8 @@ int RenderingInterface::convertVisualShapes(int linkIndex, const char* pathPrefi
     // if there is something to render adding an object to a scene
     if (!sceneShapes.empty()) {
         const auto nodeId = collisionObjectUid;
-        const bool enableCache = _flags & URDF_ENABLE_CACHED_GRAPHICS_SHAPES;
-        _sceneGraph.appendNode(nodeId, {bodyUniqueId, linkIndex, sceneShapes, enableCache});
+        const bool noCache = !(_flags & URDF_ENABLE_CACHED_GRAPHICS_SHAPES);
+        _sceneGraph.appendNode(nodeId, {bodyUniqueId, linkIndex, sceneShapes, noCache});
         _sceneState.appendNode(nodeId);
         _syncSceneGraph = true;
 
@@ -204,7 +207,7 @@ void RenderingInterface::clearBuffers(struct TGAColor& clearColor)
     auto g = clearColor.bgra[1] / 255.f;
     auto r = clearColor.bgra[2] / 255.f;
 
-    _sceneView.backgroundColor({r, g, b});
+    _sceneView.setBackgroundColor({r, g, b});
 }
 
 void RenderingInterface::getWidthAndHeight(int& width, int& height)
@@ -218,52 +221,51 @@ void RenderingInterface::getWidthAndHeight(int& width, int& height)
 void RenderingInterface::setWidthAndHeight(int width, int height)
 {
     // just a good place to reset it
-    _light.direction({-0.4, 0.25, 0.86});
-    _light.color({1.0, 1.0, 1.0});
-    _light.distance(2.0);
-    _light.ambientCoeff(0.6);
-    _light.diffuseCoeff(0.35);
-    _light.specularCoeff(0.05);
+    _light.setDirection({-0.4, 0.25, 0.86});
+    _light.setColor({1.0, 1.0, 1.0});
+    _light.setDistance(2.0);
+    _light.setAmbientCoeff(0.6);
+    _light.setDiffuseCoeff(0.35);
+    _light.setSpecularCoeff(0.05);
+    _light.shadowCaster(false);
 
-    _sceneView.backgroundColor({0.7, 0.7, 0.8});
-
-    //_sceneView.reset();
-    _sceneView.viewport({width, height});
+    _sceneView.setBackgroundColor({0.7, 0.7, 0.8});
+    _sceneView.setViewport({width, height});
 }
 
 void RenderingInterface::setLightDirection(float x, float y, float z)
 {
-    _light.direction({x, y, z});
+    _light.setDirection({x, y, z});
 }
 
 void RenderingInterface::setLightColor(float r, float g, float b)
 {
-    _light.color({r, g, b});
+    _light.setColor({r, g, b});
 }
 
 void RenderingInterface::setLightDistance(float dist)
 {
-    _light.distance(dist);
+    _light.setDistance(dist);
 }
 
 void RenderingInterface::setLightAmbientCoeff(float ambientCoeff)
 {
-    _light.ambientCoeff(ambientCoeff);
+    _light.setAmbientCoeff(ambientCoeff);
 }
 
 void RenderingInterface::setLightDiffuseCoeff(float diffuseCoeff)
 {
-    _light.diffuseCoeff(diffuseCoeff);
+    _light.setDiffuseCoeff(diffuseCoeff);
 }
 
 void RenderingInterface::setLightSpecularCoeff(float specularCoeff)
 {
-    _light.specularCoeff(specularCoeff);
+    _light.setSpecularCoeff(specularCoeff);
 }
 
 void RenderingInterface::setShadow(bool hasShadow)
 {
-    _sceneView.enableShadow(hasShadow);
+    _light.shadowCaster(hasShadow);
 }
 
 void RenderingInterface::setFlags(int flags)
@@ -297,22 +299,14 @@ void RenderingInterface::syncTransform(int collisionObjectUId,
                                        const class btTransform& worldTransform,
                                        const class btVector3& localScaling)
 {
-    if (collisionObjectUId >= 0) {
-        scene::Affine3f pose;
-        setPose(pose, worldTransform, localScaling);
-        _sceneState.pose(collisionObjectUId, pose);
-    }
+    if (collisionObjectUId >= 0)
+        _sceneState.setPose(collisionObjectUId, makePose(worldTransform, localScaling));
 }
 
 void RenderingInterface::render(const float viewMat[16], const float projMat[16])
 {
-    _camera.viewMatrix(reinterpret_cast<const scene::Matrix4f&>(viewMat));
-    _camera.projMatrix(reinterpret_cast<const scene::Matrix4f&>(projMat));
-
-    // auto& cam = _sceneView.camera();
-
-    // cam.viewMatrix(scene::Matrix4f{viewMat});
-    // cam.projMatrix(scene::Matrix4f{projMat});
+    _camera.setViewMatrix(*reinterpret_cast<const Matrix4f*>(viewMat));
+    _camera.setProjMatrix(*reinterpret_cast<const Matrix4f*>(projMat));
 }
 
 void RenderingInterface::render()
@@ -334,29 +328,22 @@ void RenderingInterface::copyCameraImageData(unsigned char* pixelsRGBA, int rgba
             _syncMaterials = false;
         }
 
-        // can disable some plane for performance reasons
-        ///@todo: add flags
-        bool enableColor = true;
-        bool enableDepth = true;
-        bool enableMask = maskBuffer != nullptr && maskSizeInPixels > 0;
-        _sceneView.enablePlanes(enableColor, enableDepth, enableMask);
-
         // set standart light and camera
-        _sceneView.light(_light);
-        _sceneView.camera(_camera);
+        _sceneView.setLight(_light);
+        _sceneView.setCamera(_camera);
+        _sceneView.setFlags(_flags);
 
-        // draw
-        if (_renderer->draw(_sceneState, _sceneView)) {
-            // _renderer->readColor(pixelsRGBA + startPixelIndex, rgbaBufferSizeInPixels);
-            // _renderer->readDepth(depthBuffer + startPixelIndex, depthBufferSizeInPixels);
-            // _renderer->readMask((uint32_t*)maskBuffer + startPixelIndex, maskSizeInPixels);
+        // destination buffer
+        ///@todo: partial buffers, check buffers size
+        render::FrameData frame{*widthPtr, *heightPtr, pixelsRGBA, depthBuffer, maskBuffer};
 
-            *numPixelsCopied = *widthPtr * *heightPtr;
+        // render
+        if (_renderer->renderFrame(_sceneState, _sceneView, frame)) {
+            *numPixelsCopied = frame.rows * frame.cols;
             return;
         }
     }
 
-    // do nothing
     *widthPtr = 0;
     *heightPtr = 0;
     *numPixelsCopied = 0;

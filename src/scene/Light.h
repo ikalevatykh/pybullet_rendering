@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "Math.h"
-#include <utils/Serialization.h>
+#include <utils/math.h>
+#include <utils/serialization.h>
 
 namespace scene {
 
@@ -46,7 +46,7 @@ class Light
      */
     Light(const Color3f& color, const Vector3f& direction, float distance)
         : _type(LightType::DirectionalLight), _color(color), _direction(direction),
-          _distance(distance)
+          _distance(distance), _position{0, 0, 0}
     {
     }
 
@@ -60,49 +60,80 @@ class Light
      */
     const Color3f& color() const { return _color; }
     /** @overload */
-    void color(const Color3f& color) { _color = color; }
+    void setColor(const Color3f& color) { _color = color; }
 
     /**
      * @brief Light direction vector in world coordinates (DirectionalLight)
      */
     const Vector3f& direction() const { return _direction; }
     /** @overload */
-    void direction(const Vector3f& direction) { _direction = direction; }
+    void setDirection(const Vector3f& direction) { _direction = direction; }
 
     /**
      * @brief Light distance (DirectionalLight)
      */
     float distance() const { return _distance; }
     /** @overload */
-    void distance(float distance) { _distance = distance; }
+    void setDistance(float distance) { _distance = distance; }
 
     /**
      * @brief Light position in world coordinates (PointLight)
      */
     const Vector3f& position() const { return _position; }
     /** @overload */
-    void position(const Vector3f& position) { _position = position; }
+    void setPosition(const Vector3f& position) { _position = position; }
 
     /**
      * @brief Light ambient coeffitient
      */
     float ambientCoeff() const { return _ambientCoeff; }
     /** @overload */
-    void ambientCoeff(float coeff) { _ambientCoeff = coeff; }
+    void setAmbientCoeff(float coeff) { _ambientCoeff = coeff; }
 
     /**
      * @brief Light diffuse coeffitient
      */
     float diffuseCoeff() const { return _diffuseCoeff; }
     /** @overload */
-    void diffuseCoeff(float coeff) { _diffuseCoeff = coeff; }
+    void setDiffuseCoeff(float coeff) { _diffuseCoeff = coeff; }
 
     /**
-     * @brief Light ambient coeffitient
+     * @brief Light specular coeffitient
      */
     float specularCoeff() const { return _specularCoeff; }
     /** @overload */
-    void specularCoeff(float coeff) { _specularCoeff = coeff; }
+    void setSpecularCoeff(float coeff) { _specularCoeff = coeff; }
+
+    /**
+     * @brief Flag indicating whether this light should cast shadows or not
+     */
+    bool isShadowCaster() const { return _isShadowCaster; }
+    /** @overload */
+    void shadowCaster(bool caster) { _isShadowCaster = caster; }
+
+    /**
+     * @brief Light ambient color
+     */
+    Color3f ambientColor() const
+    {
+        return {_color[0] * _ambientCoeff, _color[1] * _ambientCoeff, _color[2] * _ambientCoeff};
+    }
+
+    /**
+     * @brief Light diffuse color
+     */
+    Color3f diffuseColor() const
+    {
+        return {_color[0] * _diffuseCoeff, _color[1] * _diffuseCoeff, _color[2] * _diffuseCoeff};
+    }
+
+    /**
+     * @brief Light specular color
+     */
+    Color3f specularColor() const
+    {
+        return {_color[0] * _specularCoeff, _color[1] * _specularCoeff, _color[2] * _specularCoeff};
+    }
 
     /**
      * @brief Comparison operator
@@ -112,7 +143,7 @@ class Light
         return _type == other._type && _direction == other._direction && _color == other._color &&
                _distance == other._distance && _position == other._position &&
                _ambientCoeff == other._ambientCoeff && _diffuseCoeff == other._diffuseCoeff &&
-               _specularCoeff == other._specularCoeff;
+               _specularCoeff == other._specularCoeff && _isShadowCaster == other._isShadowCaster;
     }
     bool operator!=(const Light& other) const { return !(*this == other); }
 
@@ -125,9 +156,10 @@ class Light
     float _ambientCoeff;
     float _diffuseCoeff;
     float _specularCoeff;
+    bool _isShadowCaster;
 
     NOP_STRUCTURE(Light, _type, _color, _direction, _distance, _position, _ambientCoeff,
-                  _diffuseCoeff, _specularCoeff);
+                  _diffuseCoeff, _specularCoeff, _isShadowCaster);
 };
 
 } // namespace scene

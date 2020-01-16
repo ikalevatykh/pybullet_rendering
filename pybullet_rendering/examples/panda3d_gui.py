@@ -6,12 +6,14 @@ import pybullet_data
 from pybullet_utils.bullet_client import BulletClient
 from pybullet_rendering import RenderingPlugin, Renderer, ShapeType
 
+from direct.filter.CommonFilters import CommonFilters
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
 from panda3d.core import Vec3, Vec4, Quat, Vec2
 from panda3d.core import AmbientLight, DirectionalLight
 from panda3d.core import PointLight, Spotlight, PerspectiveLens
-from panda3d.core import Material, AntialiasAttrib
+from panda3d.core import Material, Texture, AntialiasAttrib
+from panda3d.core import FrameBufferProperties, WindowProperties, GraphicsPipe
 from panda3d.core import loadPrcFileData
 
 
@@ -19,6 +21,7 @@ parser = argparse.ArgumentParser("Example of using Panda3D for rendering")
 parser.add_argument("--multisamples", type=int, default=0, help="The minimum number of samples requested")
 parser.add_argument("--srgb", action="store_true", help="Enable gamma-correction")
 parser.add_argument("--shadow_resolution", type=int, default=1024, help="Shadow buffer resolution")
+parser.add_argument("--ambient_occlusion", action="store_true", help="Ambient occlusion filter")
 parser.add_argument("--debug", action="store_true", help="Debug scene mode")
 args = parser.parse_args()
 
@@ -33,6 +36,7 @@ loadPrcFileData("",
     gl-compile-and-execute 1
     gl-use-bindless-texture 1
     prefer-texture-buffer 1
+    audio-library-name null
     """)
 
 
@@ -48,15 +52,22 @@ class MyApp(Renderer, ShowBase):
 
         # just two steps to bind external renderer
         plugin = RenderingPlugin(client)
-        plugin.setLocalRenderer(self)
+        plugin.set_local_renderer(self)
 
         # setup scene
         self.nodes = {}
         self.setupScene(client)
         self.setupLights()
+        self.camLens.setNearFar(3, 7)
+        self.camLens.setFilmSize(Vec2(0.030, 0.030))
         self.render.setAntialias(AntialiasAttrib.MAuto)
-        # self.render.setDepthOffset(1)
+        self.render.setDepthOffset(1)
         self.render.setShaderAuto()
+
+        # setup filters
+        if args.ambient_occlusion:
+            filters = CommonFilters(self.win, self.cam)
+            filters.setAmbientOcclusion()
 
         # setup periodic tasks
         self.time = 0
@@ -64,7 +75,7 @@ class MyApp(Renderer, ShowBase):
         self.taskMgr.add(self.stepSimulationTask, "StepSimulationTask")
 
         if args.debug:
-            base.oobe()
+            self.oobe()
 
     def setupScene(self, client):
         """Init pybullet scene"""
@@ -104,8 +115,7 @@ class MyApp(Renderer, ShowBase):
         dlight = DirectionalLight('dlight')
         dlight.setColor((0.8, 0.8, 0.5, 1))
         lens = PerspectiveLens()
-        lens.setFilmSize(Vec2(30, 30))
-        lens.setNearFar(1, 10)
+        lens.setNearFar(1, 5)
         dlight.setLens(lens)
         dlight.setShadowCaster(True, args.shadow_resolution, args.shadow_resolution)
         dlnp = self.render.attachNewNode(dlight)
@@ -117,8 +127,7 @@ class MyApp(Renderer, ShowBase):
         slight = Spotlight('slight')
         slight.setColor((0.7, 0.7, 1.0, 1))
         lens = PerspectiveLens()
-        lens.setFilmSize(Vec2(30, 30))
-        lens.setNearFar(1, 10)
+        lens.setNearFar(1, 5)
         slight.setLens(lens)
         slight.setShadowCaster(True, args.shadow_resolution, args.shadow_resolution)
         slnp = self.render.attachNewNode(slight)
@@ -143,8 +152,8 @@ class MyApp(Renderer, ShowBase):
             self.time = task.time
         return Task.cont
 
-    def updateScene(self, scene_graph, materials_only):
-        """Update a scene graph
+    def update_scene(self, scene_graph, materials_only):
+        """ Update a scene graph
 
         Arguments:
             scene_graph {SceneGraph} -- scene description
@@ -155,11 +164,8 @@ class MyApp(Renderer, ShowBase):
             self.nodes[k] = node
 
             for j, shape in enumerate(v.shapes):
-                has_materials = False
-
                 if shape.type == ShapeType.Mesh:
                     filename = shape.mesh.filename
-                    has_materials = shape.mesh.use_materials
                 elif shape.type == ShapeType.Cube:
                     filename = 'cube.obj'
                 else:
@@ -169,7 +175,7 @@ class MyApp(Renderer, ShowBase):
                 # load model
                 model = self.loader.load_model(filename)
 
-                if not has_materials:
+                if shape.has_material:
                     # set material
                     material = Material()
                     material.setAmbient(Vec4(*shape.material.diffuse_color))
@@ -186,27 +192,26 @@ class MyApp(Renderer, ShowBase):
                 pose = shape.pose
                 model.reparentTo(node)
                 model.setPos(*shape.pose.origin)
-                model.setQuat(Quat(*shape.pose.quaternion))
+                model.setQuat(Quat(*shape.pose.quat))
                 model.setScale(*shape.pose.scale)
 
-    def draw(self, scene_state, scene_view):
-        """Update a scene state
+    def render_frame(self, scene_state, scene_view, frame):
+        """ Update a scene state
 
         Arguments:
             scene_state {SceneState} --  scene state, e.g. transformations of all objects
-            scene_view {SceneView} -- view, e.g. camera, light, viewport parameters
-
-        Returns:
-            bool -- image ready
+            scene_view {SceneView} -- view settings, e.g. camera, light, viewport parameters
+            frame {FrameData} -- output image buffer, ignore
         """
         for k, node in self.nodes.items():
             pose = scene_state.pose(k)
             node.setPos(*pose.origin)
-            node.setQuat(Quat(*pose.quaternion))
+            node.setQuat(Quat(*pose.quat))
             node.setScale(*pose.scale)
 
-        base.setBackgroundColor(*scene_view.background_color)
-        return False  # <- no real drawing
+        self.setBackgroundColor(*scene_view.background_color)
+        return False
+
 
 app = MyApp()
 app.run()

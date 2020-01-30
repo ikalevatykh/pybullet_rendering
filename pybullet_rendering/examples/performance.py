@@ -1,3 +1,4 @@
+import argparse
 import numpy as np
 import pkgutil
 import pybullet as pb
@@ -8,15 +9,20 @@ from timeit import default_timer as timer
 from pybullet_utils.bullet_client import BulletClient
 from pybullet_rendering import RenderingPlugin
 
+parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument('-f', '--frame_size', nargs='+', default=[256, 256], help='Frame size')
+parser.add_argument('-e',
+                    '--engines',
+                    nargs='+',
+                    default=['tiny', 'egl', 'pyrender', 'panda3d'],
+                    help='Engines to test')
+
 
 class PerformanceTest:
-    """[summary]
-
-    Returns:
-        [type] -- [description]
+    """Performance test
     """
 
-    def __init__(self, engine='tiny', frame_size=(256, 256)):
+    def __init__(self, engine, frame_size):
         self._engine = engine
         self._frame_size = frame_size
         self._client = BulletClient(pb.DIRECT)
@@ -47,7 +53,6 @@ class PerformanceTest:
         ret = self._client.getCameraImage(*self._frame_size,
                                           projectionMatrix=self._proj_mat,
                                           viewMatrix=self._view_mat,
-                                          shadow=1,
                                           flags=pb.ER_NO_SEGMENTATION_MASK)
         if self._renderer is None:
             return ret[2], ret[3]
@@ -98,18 +103,18 @@ class PerformanceTest:
         self._view_mat = pb.computeViewMatrixFromYawPitchRoll((0.4, 0, 0), 2.0, 0, -40, 0, 2)
 
 
-def main():
+def main(args):
     results = {}
-    for engine in ['tiny', 'egl', 'pyrender', 'panda3d']:
+    for engine in args.engines:
         print(f'Test {engine}...')
-        test = PerformanceTest(engine)
+        test = PerformanceTest(engine, args.frame_size)
         fps = test.run()
         results[engine] = fps
-
     print('Results:')
     for engine, fps in results.items():
         print(f'{engine}: {fps:.2f} fps')
 
 
 if __name__ == '__main__':
-    main()
+    args = parser.parse_args()
+    main(args)

@@ -1,8 +1,9 @@
-#!/usr/bin/env python3
-
 # Copyright (c) 2019-2020 INRIA.
 # This source code is licensed under the LGPLv3 license found in the
 # LICENSE file in the root directory of this source tree.
+
+# Setup code adapted from the habitat-sim project
+# https://github.com/facebookresearch/habitat-sim/blob/master/setup.py
 
 import argparse
 import os
@@ -22,9 +23,7 @@ from setuptools.command.install import install
 
 
 def build_parser():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         "--bullet_dir",
         dest="bullet_dir",
@@ -33,9 +32,10 @@ def build_parser():
         required=True,
         help="Path to a bullet root directory",
     )
-    parser.add_argument(
-        "--build-tests", dest="build_tests", action="store_true", help="Build tests"
-    )
+    parser.add_argument("--build-tests",
+                        dest="build_tests",
+                        action="store_true",
+                        help="Build tests")
     return parser
 
 
@@ -48,7 +48,6 @@ for i, arg in enumerate(sys.argv):
 
     parseable_args.append(arg)
 
-
 parser = build_parser()
 args, filtered_args = parser.parse_known_args(args=parseable_args)
 
@@ -56,20 +55,20 @@ sys.argv = filtered_args + unparseable_args
 
 
 class CMakeExtension(Extension):
+
     def __init__(self, name, sourcedir=""):
         Extension.__init__(self, name, sources=[])
         self.sourcedir = os.path.abspath(sourcedir)
 
 
 class CMakeBuild(build_ext):
+
     def run(self):
         try:
             out = subprocess.check_output(["cmake", "--version"])
         except OSError:
-            raise RuntimeError(
-                "CMake must be installed to build the following extensions: "
-                + ", ".join(e.name for e in self.extensions)
-            )
+            raise RuntimeError("CMake must be installed to build the following extensions: " +
+                               ", ".join(e.name for e in self.extensions))
 
         for ext in self.extensions:
             self.build_extension(ext)
@@ -82,9 +81,7 @@ class CMakeBuild(build_ext):
             is_in_git = False
 
         if is_in_git:
-            subprocess.check_call(
-                ["git", "submodule", "update", "--init", "--recursive"]
-            )
+            subprocess.check_call(["git", "submodule", "update", "--init", "--recursive"])
 
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         cmake_args = [
@@ -96,10 +93,8 @@ class CMakeBuild(build_ext):
         build_args = ["--config", cfg]
 
         if platform.system() == "Windows":
-            cmake_args += [
-                "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}".format(cfg.upper(), extdir)
-            ]
-            if sys.maxsize > 2 ** 32:
+            cmake_args += ["-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}".format(cfg.upper(), extdir)]
+            if sys.maxsize > 2**32:
                 cmake_args += ["-A", "x64"]
             build_args += ["--", "/m"]
         else:
@@ -110,31 +105,26 @@ class CMakeBuild(build_ext):
         cmake_args += ["-DBUILD_TEST={}".format("ON" if args.build_tests else "OFF")]
 
         env = os.environ.copy()
-        env["CXXFLAGS"] = '{} -DVERSION_INFO=\\"{}\\"'.format(
-            env.get("CXXFLAGS", ""), self.distribution.get_version()
-        )
+        env["CXXFLAGS"] = '{} -DVERSION_INFO=\\"{}\\"'.format(env.get("CXXFLAGS", ""),
+                                                              self.distribution.get_version())
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
-        subprocess.check_call(
-            ["cmake", ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env
-        )
-        subprocess.check_call(
-            ["cmake", "--build", "."] + build_args, cwd=self.build_temp
-        )
+        subprocess.check_call(["cmake", ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
+        subprocess.check_call(["cmake", "--build", "."] + build_args, cwd=self.build_temp)
 
         print()  # Add an empty line for cleaner output
 
 
+# version
+exec(open('pybullet_rendering/version.py').read())
+
+# requirements
 with open("./requirements.txt", "r") as f:
     requirements = [l.strip() for l in f.readlines() if len(l.strip()) > 0]
 
-
-builtins.__PLUGIN_SETUP__ = True
-import pybullet_rendering
-
 setup(
     name="pybullet_rendering",
-    version=pybullet_rendering.__version__,
+    version=__version__,
     author="Igor Kalevatykh",
     description="A rendering plugin for PyBullet",
     long_description="",

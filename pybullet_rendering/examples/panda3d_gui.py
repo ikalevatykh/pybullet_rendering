@@ -4,7 +4,7 @@ import pybullet as pb
 import pybullet_data
 
 from pybullet_utils.bullet_client import BulletClient
-from pybullet_rendering import RenderingPlugin, Renderer, ShapeType
+from pybullet_rendering import RenderingPlugin, BaseRenderer, ShapeType
 
 from direct.filter.CommonFilters import CommonFilters
 from direct.showbase.ShowBase import ShowBase
@@ -40,29 +40,28 @@ loadPrcFileData("",
     """)
 
 
-class MyApp(Renderer, ShowBase):
+class MyApp(BaseRenderer, ShowBase):
 
     def __init__(self):
-        Renderer.__init__(self)  # <- important
+        BaseRenderer.__init__(self)  # <- important
         ShowBase.__init__(self)
 
         client = BulletClient(pb.DIRECT)
         client.setAdditionalSearchPath(pybullet_data.getDataPath())
         self.client = client
 
-        # just two steps to bind external renderer
-        plugin = RenderingPlugin(client)
-        plugin.set_local_renderer(self)
+        # bind external renderer
+        plugin = RenderingPlugin(client, self)
 
         # setup scene
         self.nodes = {}
-        self.setupScene(client)
-        self.setupLights()
         self.camLens.setNearFar(3, 7)
         self.camLens.setFilmSize(Vec2(0.030, 0.030))
         self.render.setAntialias(AntialiasAttrib.MAuto)
         self.render.setDepthOffset(1)
         self.render.setShaderAuto()
+        self.setupScene(client)
+        self.setupLights()
 
         # setup filters
         if args.ambient_occlusion:
@@ -92,7 +91,6 @@ class MyApp(Renderer, ShowBase):
             -0.299912, 0.000000, -0.000043, 0.299960, 0.000000, -0.000200
         ]
         for i, q in enumerate(Q):
-            # client.resetJointState(kuka, i, q)
             client.setJointMotorControl2(bodyIndex=kuka,
                                         jointIndex=i,
                                         controlMode=pb.POSITION_CONTROL,
@@ -136,7 +134,8 @@ class MyApp(Renderer, ShowBase):
         self.render.setLight(slnp)
 
     def spinCameraTask(self, task):
-        """Update camera position"""
+        """Update camera position
+        """
         deg = task.time * 6.0
         rad = deg * (np.pi / 180.0)
         self.camera.setPos(0.4 + 5.0 * np.sin(rad), -5.0 * np.cos(rad), 1.5)
@@ -144,7 +143,8 @@ class MyApp(Renderer, ShowBase):
         return Task.cont
 
     def stepSimulationTask(self, task):
-        """Update light position"""
+        """Update light position
+        """
         if task.time - self.time > 1 / 240.:
             self.client.stepSimulation()
             # this call trigger updateScene (if necessary) and draw methods
@@ -153,7 +153,7 @@ class MyApp(Renderer, ShowBase):
         return Task.cont
 
     def update_scene(self, scene_graph, materials_only):
-        """ Update a scene graph
+        """Update a scene using scene_graph description
 
         Arguments:
             scene_graph {SceneGraph} -- scene description
@@ -196,7 +196,7 @@ class MyApp(Renderer, ShowBase):
                 model.setScale(*shape.pose.scale)
 
     def render_frame(self, scene_state, scene_view, frame):
-        """ Update a scene state
+        """Render a scene at scene_state with a scene_view settings
 
         Arguments:
             scene_state {SceneState} --  scene state, e.g. transformations of all objects
@@ -209,7 +209,7 @@ class MyApp(Renderer, ShowBase):
             node.setQuat(Quat(*pose.quat))
             node.setScale(*pose.scale)
 
-        self.setBackgroundColor(*scene_view.background_color)
+        self.setBackgroundColor(*scene_view.bg_color)
         return False
 
 

@@ -74,8 +74,9 @@ class SceneView
      */
     bool operator==(const SceneView& other) const
     {
-        return _bg_color == other._bg_color && _camera == other._camera && _flags == other._flags &&
-               _light == other._light && _viewport == other._viewport;
+        return _viewport == other._viewport && _bg_color == other._bg_color &&
+               _bg_texture == other._bg_texture && _flags == other._flags &&
+               _camera == other._camera && _light == other._light;
     }
     bool operator!=(const SceneView& other) const { return !(*this == other); }
 

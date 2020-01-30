@@ -51,10 +51,13 @@ void bindSceneGraph(py::module& m)
     // Shape
     py::class_<Shape>(m, "Shape")
         .def_property_readonly("type", &Shape::type, "Shape type")
-        .def_property_readonly("pose", &Shape::pose, "Shape pose relative to a parent node")
-        .def_property_readonly("mesh", &Shape::mesh, "Mesh description")
+        .def_property_readonly("pose", &Shape::pose, "Shape pose relative to a parent node",
+                               py::return_value_policy::reference_internal)
+        .def_property_readonly("mesh", &Shape::mesh, "Mesh description",
+                               py::return_value_policy::reference_internal)
         .def_property_readonly("has_material", &Shape::hasMaterial, "Shape has material")
-        .def_property("material", &Shape::material, &Shape::setMaterial, "Shape material")
+        .def_property("material", &Shape::material, &Shape::setMaterial, "Shape material",
+                      py::return_value_policy::reference_internal)
         // operators
         .def(py::self == py::self)
         .def(py::self != py::self);

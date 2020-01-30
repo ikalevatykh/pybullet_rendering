@@ -18,8 +18,8 @@ PYBIND11_MODULE(bindings, m)
 {
     m.doc() = "PyBullet rendering plugin binding";
 
-    bindPlugin(m);
+    bindUtils(m);
     bindRender(m);
     bindScene(m);
-    bindUtils(m);
+    bindPlugin(m);
 }

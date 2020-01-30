@@ -137,21 +137,21 @@ void RenderingInterface::changeRGBAColor(int bodyUniqueId, int linkIndex, int sh
 
     auto ptr = _visualShapes.find(bodyUniqueId);
     if (ptr != _visualShapes.end()) {
-        int i = 0;
+        int i = -1;
         for (auto& visualShape : ptr->second) {
             if (visualShape.m_linkIndex != linkIndex)
                 continue;
 
-            if (shapeIndex != -1 && shapeIndex != i++)
+            if (shapeIndex != ++i && shapeIndex != -1)
                 continue;
 
             // update pybullet-specific descriptor
-            for (int i = 0; i < 4; ++i)
-                visualShape.m_rgbaColor[i] = rgba[i];
+            for (int j = 0; j < 4; ++j)
+                visualShape.m_rgbaColor[j] = rgba[j];
 
             // update scene graph
             _sceneGraph.changeShapeColor(
-                collisionObjectUid, shapeIndex,
+                collisionObjectUid, i,
                 {float(rgba[0]), float(rgba[1]), float(rgba[2]), float(rgba[3])});
             _syncMaterials = true;
         }
@@ -165,19 +165,19 @@ void RenderingInterface::changeShapeTexture(int bodyUniqueId, int linkIndex, int
 
     auto ptr = _visualShapes.find(bodyUniqueId);
     if (ptr != _visualShapes.end()) {
-        int i = 0;
+        int i = -1;
         for (auto& visualShape : ptr->second) {
             if (visualShape.m_linkIndex != linkIndex)
                 continue;
 
-            if (shapeIndex != -1 && shapeIndex != i++)
+            if (shapeIndex != ++i && shapeIndex != -1)
                 continue;
 
             // update pybullet-specific descriptor
             visualShape.m_textureUniqueId = textureUniqueId;
 
             // update scene graph
-            _sceneGraph.changeShapeTexture(collisionObjectUid, shapeIndex, textureUniqueId);
+            _sceneGraph.changeShapeTexture(collisionObjectUid, i, textureUniqueId);
             _syncMaterials = true;
         }
     }
@@ -221,7 +221,9 @@ void RenderingInterface::getWidthAndHeight(int& width, int& height)
 void RenderingInterface::setWidthAndHeight(int width, int height)
 {
     // just a good place to reset it
-    _light.setDirection({-0.4, 0.25, 0.86});
+    _light.setType(scene::LightType::DirectionalLight);
+    _light.setPosition({-0.4, 0.25, 0.86});
+    _light.setDirection({0.4, -0.25, -0.86});
     _light.setColor({1.0, 1.0, 1.0});
     _light.setDistance(2.0);
     _light.setAmbientCoeff(0.6);
@@ -235,7 +237,11 @@ void RenderingInterface::setWidthAndHeight(int width, int height)
 
 void RenderingInterface::setLightDirection(float x, float y, float z)
 {
-    _light.setDirection({x, y, z});
+    // lightDirection specifies the world position of the light source,
+    // the direction is from the light source position to the origin
+    // of the world frame.
+    _light.setPosition({x, y, z});
+    _light.setDirection({-x, -y, -z});
 }
 
 void RenderingInterface::setLightColor(float r, float g, float b)

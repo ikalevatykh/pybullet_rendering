@@ -22,15 +22,14 @@ typedef Vector4f Color4f;
  */
 struct Affine3f {
     Vector3f origin;
-    Quaternionf quaternion;
+    Quaternionf quat;
     Vector3f scale;
 
     static constexpr Affine3f Identity() { return Affine3f{{0, 0, 0}, {1, 0, 0, 0}, {1, 1, 1}}; }
 
-    Vector3f euler() const
+    inline Vector3f euler() const
     {
-        const float qw = quaternion[0], qx = quaternion[1], //
-            qy = quaternion[2], qz = quaternion[3];
+        const auto qw = quat[0], qx = quat[1], qy = quat[2], qz = quat[3];
 
         // roll (x-axis rotation)
         double sinr_cosp = 2 * (qw * qx + qy * qz);
@@ -51,15 +50,37 @@ struct Affine3f {
         return {float(yaw), float(roll), float(pitch)};
     }
 
+    inline Matrix4f matrix() const
+    {
+        const auto qw = quat[0], qx = quat[1], qy = quat[2], qz = quat[3];
+
+        const auto m00 = 1 - 2 * (qy * qy + qz * qz);
+        const auto m01 = 2 * (qx * qy - qz * qw);
+        const auto m02 = 2 * (qx * qz + qy * qw);
+
+        const auto m10 = 2 * (qx * qy + qz * qw);
+        const auto m11 = 1 - 2 * (qx * qx + qz * qz);
+        const auto m12 = 2 * (qy * qz - qx * qw);
+
+        const auto m20 = 2 * (qx * qz - qy * qw);
+        const auto m21 = 2 * (qy * qz + qx * qw);
+        const auto m22 = 1 - 2 * (qx * qx + qy * qy);
+
+        return {m00 * scale[0], m10 * scale[1], m20 * scale[2], 0.f,
+                m01 * scale[0], m11 * scale[1], m21 * scale[2], 0.f,
+                m02 * scale[0], m12 * scale[1], m22 * scale[2], 0.f,
+                origin[0],      origin[1],      origin[2],      1.f};
+    }
+
     /**
      * @brief Comparison operators
      */
     bool operator==(const Affine3f& other) const
     {
-        return origin == other.origin && quaternion == other.quaternion && scale == other.scale;
+        return origin == other.origin && quat == other.quat && scale == other.scale;
     }
     bool operator!=(const Affine3f& other) const { return !(*this == other); }
 
   private:
-    NOP_STRUCTURE(Affine3f, origin, quaternion, scale);
+    NOP_STRUCTURE(Affine3f, origin, quat, scale);
 };

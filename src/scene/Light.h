@@ -32,7 +32,7 @@ class Light
      * @brief Construct a new Light object
      *
      */
-    Light() noexcept : _type(LightType::Unknown) {}
+    Light() noexcept {}
 
     /**
      * @brief Construct a new Light object
@@ -54,6 +54,8 @@ class Light
      * @brief Light type
      */
     LightType type() const { return _type; }
+    /** @overload */
+    void setType(LightType type) { _type = type; }
 
     /**
      * @brief Light color
@@ -148,17 +150,17 @@ class Light
     bool operator!=(const Light& other) const { return !(*this == other); }
 
   private:
-    LightType _type;
-    Color3f _color;
-    Vector3f _direction;
-    Vector3f _position;
-    float _distance;
-    float _ambientCoeff;
-    float _diffuseCoeff;
-    float _specularCoeff;
-    bool _isShadowCaster;
+    LightType _type = LightType::Unknown;
+    Color3f _color = Color3f{0.f, 0.f, 0.f};
+    Vector3f _direction = Vector3f{0.f, 0.f, 0.f};
+    Vector3f _position = Vector3f{0.f, 0.f, 0.f};
+    float _distance = 0.f;
+    float _ambientCoeff = 1.f;
+    float _diffuseCoeff = 1.f;
+    float _specularCoeff = 1.f;
+    bool _isShadowCaster = false;
 
-    NOP_STRUCTURE(Light, _type, _color, _direction, _distance, _position, _ambientCoeff,
+    NOP_STRUCTURE(Light, _type, _color, _direction, _position, _distance, _ambientCoeff,
                   _diffuseCoeff, _specularCoeff, _isShadowCaster);
 };
 

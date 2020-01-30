@@ -9,7 +9,7 @@ void bindRender(py::module& m)
     using namespace render;
 
     // Renderer
-    py::class_<BaseRenderer, PyRenderer, std::shared_ptr<BaseRenderer>>(m, "Renderer")
+    py::class_<BaseRenderer, PyRenderer, std::shared_ptr<BaseRenderer>>(m, "BaseRenderer")
         .def(py::init<>())
         .def("update_scene", &BaseRenderer::updateScene,
              "Update a scene using scene graph description")

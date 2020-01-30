@@ -32,7 +32,7 @@ inline Affine3f makePose(const btTransform& frame, const btVector3& scale)
 
     Affine3f pose;
     pose.origin = {float(origin.x()), float(origin.y()), float(origin.z())};
-    pose.quaternion = {float(quat.getW()), float(quat.x()), float(quat.y()), float(quat.z())};
+    pose.quat = {float(quat.getW()), float(quat.x()), float(quat.y()), float(quat.z())};
     pose.scale = {float(scale.x()), float(scale.y()), float(scale.z())};
     return pose;
 }

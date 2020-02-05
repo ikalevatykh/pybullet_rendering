@@ -122,6 +122,10 @@ exec(open('pybullet_rendering/version.py').read())
 with open("./requirements.txt", "r") as f:
     requirements = [l.strip() for l in f.readlines() if len(l.strip()) > 0]
 
+# data files
+data_dir = os.path.join('share')
+data_files = [(d, [os.path.join(d, f) for f in files]) for d, folders, files in os.walk(data_dir)]
+
 setup(
     name="pybullet_rendering",
     version=__version__,
@@ -132,5 +136,6 @@ setup(
     install_requires=requirements,
     ext_modules=[CMakeExtension("pybullet_rendering.bindings", "src")],
     cmdclass=dict(build_ext=CMakeBuild),
+    data_files=data_files,
     zip_safe=False,
 )

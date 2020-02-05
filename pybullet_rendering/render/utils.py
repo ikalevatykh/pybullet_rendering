@@ -5,7 +5,7 @@ __all__ = ['shape_filename']
 
 
 def shape_filename(shape):
-    if shape.type == ShapeType.Mesh:
+    if shape.type == pr.ShapeType.Mesh:
         return shape.mesh.filename
 
     packagedir = dirname(pr.__path__[0])

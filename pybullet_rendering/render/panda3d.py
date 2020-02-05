@@ -128,9 +128,10 @@ class Renderer(BaseRenderer):
             self._light.update(scene_view.light)
         self._renderer.render_frame(self._camera, scene_view.viewport, scene_view.bg_color)
         if self.return_to_bullet:
+            print(self.color.shape)
             frame.color_img[:] = self.color
             frame.depth_img[:] = self.depth
-            #TODO: implement depth and mask
+            #TODO: implement mask
             return True
         return False
 
@@ -171,18 +172,24 @@ class OffscreenRenderer:
         self._engine.extract_texture_data(self._color_tex, self._window.get_gsg())
         width, height = self._window_size
         color_buf = self._color_tex.get_ram_image_as('RGBA')
+        tex_width = self._color_tex.get_x_size()
+        tex_height = self._color_tex.get_y_size()
         color_im = np.asarray(color_buf)
-        color_im = color_im.reshape((height, width, 4))
+        color_im = color_im.reshape((tex_height, tex_width, 4))
+        color_im = color_im[:height, :width]
         return np.flipud(color_im)
 
     def extract_depth_image(self):
         self._engine.extract_texture_data(self._depth_tex, self._window.get_gsg())
         width, height = self._window_size
         depth_buf = self._depth_tex.get_ram_image()
+        tex_width = self._color_tex.get_x_size()
+        tex_height = self._color_tex.get_y_size()
         # adapted from https://github.com/mmatl/pyrender/pyrender/renderer.py
         depth_im = np.frombuffer(depth_buf, dtype=np.uint16)
         depth_im = depth_im.astype(np.float32) / np.iinfo(np.uint16).max
-        depth_im = depth_im.reshape((height, width))
+        depth_im = depth_im.reshape((tex_height, tex_width))
+        depth_im = depth_im[:height, :width]
         depth_im = np.flip(depth_im, axis=0)
         inf_inds = (depth_im == 1.0)
         depth_im = 2.0 * depth_im - 1.0
@@ -205,7 +212,7 @@ class OffscreenRenderer:
             # framebuffer
             fbp = FrameBufferProperties(self._fb_props)
             fbp.set_rgba_bits(8, 8, 8, 8)
-            fbp.set_depth_bits(1)
+            fbp.set_depth_bits(16)
             self._window = self._engine.make_output(self._pipe, 'buffer', 0, fbp,
                                                     WindowProperties.size(*window_size),
                                                     GraphicsPipe.BFRefuseWindow)
@@ -232,6 +239,7 @@ class OffscreenRenderer:
         self._window = None
         self._viewport = None
         self._window_size = (0, 0)
+        self._engine.remove_all_windows()
 
     def cleanup(self):
         """ Remove framebuffer and cleanup resources

@@ -36,6 +36,14 @@ class RenderingInterface : public UrdfRenderingInterface
                                     const UrdfModel* model, int collisionObjectUniqueId,
                                     int bodyUniqueId, struct CommonFileIOInterface* fileIO);
 
+    virtual int registerShapeAndInstance(const struct b3VisualShapeData& visualShape,
+                                         const float* vertices, int numvertices, const int* indices,
+                                         int numIndices, int primitiveType, int textureId,
+                                         int orgGraphicsUniqueId, int bodyUniqueId, int linkIndex);
+
+    virtual void updateShape(int shapeUniqueId, const btVector3* vertices, int numVertices,
+                             const btVector3* normals, int numNormals);
+
     /// Given b3VisualShapeData, add render information (texture, rgbaColor etc) to the visualShape
     /// and visualShape to internal renderer.
     /// Returns a visualShapeUniqueId as a unique identifier to synchronize the world transform and
@@ -60,6 +68,9 @@ class RenderingInterface : public UrdfRenderingInterface
     /// change the RGBA color for some visual shape.
     virtual void changeRGBAColor(int bodyUniqueId, int linkIndex, int shapeIndex,
                                  const double rgbaColor[4]);
+
+    /// change the instance flags, double-sided rendering
+    virtual void changeInstanceFlags(int bodyUniqueId, int linkIndex, int shapeIndex, int flags);
 
     /// select a given texture for some visual shape.
     virtual void changeShapeTexture(int objectUniqueId, int linkIndex, int shapeIndex,

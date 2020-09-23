@@ -38,6 +38,23 @@ void RenderingInterface::resetAll()
     _objectIndices.clear();
 }
 
+int RenderingInterface::registerShapeAndInstance(const struct b3VisualShapeData& visualShape,
+                                                 const float* vertices, int numvertices,
+                                                 const int* indices, int numIndices,
+                                                 int primitiveType, int textureId,
+                                                 int orgGraphicsUniqueId, int bodyUniqueId,
+                                                 int linkIndex)
+{
+    /// @todo: registerShapeAndInstance not implemented
+    return -1;
+}
+
+void RenderingInterface::updateShape(int shapeUniqueId, const btVector3* vertices, int numVertices,
+                                     const btVector3* normals, int numNormals)
+{
+    /// @todo: updateShape not implemented
+}
+
 int RenderingInterface::convertVisualShapes(int linkIndex, const char* pathPrefix,
                                             const btTransform& localInertiaFrame,
                                             const UrdfLink* linkPtr, const UrdfModel* urdfModel,
@@ -156,6 +173,12 @@ void RenderingInterface::changeRGBAColor(int bodyUniqueId, int linkIndex, int sh
             _syncMaterials = true;
         }
     }
+}
+
+void RenderingInterface::changeInstanceFlags(int bodyUniqueId, int linkIndex, int shapeIndex,
+                                             int flags)
+{
+    /// @todo: changeInstanceFlags not implemented
 }
 
 void RenderingInterface::changeShapeTexture(int bodyUniqueId, int linkIndex, int shapeIndex,

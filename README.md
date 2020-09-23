@@ -3,21 +3,28 @@ External rendering for [PyBullet](https://github.com/bulletphysics/bullet3/) sim
 
 ## Install
 
+### Install NumPy 
+
+```
+pip install numpy
+```
+
 ### Install PyBullet
 
 ```
-cd $BULLET_ROOT_DIR
 git clone https://github.com/bulletphysics/bullet3.git
 cd bullet3
 python setup.py install
+export BULLET_ROOT_DIR="$PWD"
 ```
 
 ### Install package
 
 ```
+cd ..
 git clone https://github.com/ikalevatykh/pybullet_rendering.git
 cd pybullet_rendering
-python setup.py install --bullet_dir "$BULLET_ROOT_DIR/bullet3"
+python setup.py install --bullet_dir "$BULLET_ROOT_DIR"
 ```
 
 ### Run tests

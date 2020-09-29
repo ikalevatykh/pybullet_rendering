@@ -15,5 +15,6 @@ def shape_filename(shape):
         return join(packagedir, 'share', 'primitives', 'sphere.stl')
     elif shape.type == pr.ShapeType.Cylinder:
         return join(packagedir, 'share', 'primitives', 'cylinder.stl')
-
+    elif shape.type == pr.ShapeType.Capsule:
+        return join(packagedir, 'share', 'primitives', 'cylinder.stl')
     return ''

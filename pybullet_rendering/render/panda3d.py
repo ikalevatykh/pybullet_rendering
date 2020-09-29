@@ -1,3 +1,4 @@
+from attr import s
 import numpy as np
 
 from panda3d.core import Vec2, Vec3, Vec4, Quat, Mat4
@@ -100,14 +101,17 @@ class Renderer(BaseRenderer):
                 if not filename:
                     continue
                 shape = self._loader.load_model(filename)
-                shape.set_mat(Mat4(*pb_shape.pose.matrix))
-                shape.reparent_to(node)
                 if shape.has_material:
                     shape.set_material(PbMaterial(pb_shape.material), 1)
                     texture_id = pb_shape.material.diffuse_texture
                     if texture_id > -1:
                         texture = scene_graph.texture(texture_id)
                         shape.set_texture(texture.filename)
+                pose = pb_shape.pose
+                shape.setPos(*pose.origin)
+                shape.setQuat(Quat(*pose.quat))
+                shape.setScale(*pose.scale)
+                shape.reparent_to(node)
             node.flatten_light()
             node.reparent_to(self.scene)
             self._node_dict[uid] = node
@@ -128,7 +132,6 @@ class Renderer(BaseRenderer):
             self._light.update(scene_view.light)
         self._renderer.render_frame(self._camera, scene_view.viewport, scene_view.bg_color)
         if self.return_to_bullet:
-            print(self.color.shape)
             frame.color_img[:] = self.color
             frame.depth_img[:] = self.depth
             #TODO: implement mask
@@ -309,7 +312,10 @@ class PbLightNode():
         self._alight.set_color(Vec3(*pb_light.ambient_color))
         self._dlight.set_color(Vec3(*pb_light.diffuse_color))
         self._dlight.set_specular_color(Vec3(*pb_light.specular_color))
-        self._dlight.set_shadow_caster(pb_light.shadow_caster)
+        
+        shadow_res = 1024
+        self._dlight.set_shadow_caster(pb_light.shadow_caster, shadow_res, shadow_res)
+        
         self._dnode.set_pos(Vec3(*pb_light.position))
         self._dnode.look_at(0, 0, 0)
 

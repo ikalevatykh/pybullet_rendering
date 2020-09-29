@@ -5,6 +5,8 @@ import pybullet_data
 
 from pybullet_utils.bullet_client import BulletClient
 from pybullet_rendering import RenderingPlugin, BaseRenderer, ShapeType
+from pybullet_rendering.render.panda3d import PbMaterial
+from pybullet_rendering.render.utils import shape_filename
 
 from direct.filter.CommonFilters import CommonFilters
 from direct.showbase.ShowBase import ShowBase
@@ -55,7 +57,7 @@ class MyApp(BaseRenderer, ShowBase):
 
         # setup scene
         self.nodes = {}
-        self.camLens.setNearFar(3, 7)
+        self.camLens.setNearFar(.1, 20)
         self.camLens.setFilmSize(Vec2(0.030, 0.030))
         self.render.setAntialias(AntialiasAttrib.MAuto)
         self.render.setDepthOffset(1)
@@ -82,6 +84,8 @@ class MyApp(BaseRenderer, ShowBase):
         client.resetBasePositionAndOrientation(
             table, [0.4, 0.04, -0.7], [0, 0, 0, 1])
 
+        human = client.loadURDF("humanoid/humanoid.urdf", globalScaling=.25, 
+                                basePosition=(0, -.6, .15), baseOrientation=(1,0,0,1))
         kuka = client.loadSDF("kuka_iiwa/kuka_with_gripper2.sdf")[0]
         client.resetBasePositionAndOrientation(
             kuka, [0.0, 0.0, 0.0], [0, 0, 0, 1])
@@ -138,7 +142,8 @@ class MyApp(BaseRenderer, ShowBase):
         """
         deg = task.time * 6.0
         rad = deg * (np.pi / 180.0)
-        self.camera.setPos(0.4 + 5.0 * np.sin(rad), -5.0 * np.cos(rad), 1.5)
+        dist = 5.
+        self.camera.setPos(0.4 + dist * np.sin(rad), -dist * np.cos(rad), 1.5)
         self.camera.setHpr(deg, -15, 0)
         return Task.cont
 
@@ -163,37 +168,30 @@ class MyApp(BaseRenderer, ShowBase):
             node = self.render.attachNewNode(f'node_{k:02d}')
             self.nodes[k] = node
 
-            for j, shape in enumerate(v.shapes):
-                if shape.type == ShapeType.Mesh:
-                    filename = shape.mesh.filename
-                elif shape.type == ShapeType.Cube:
-                    filename = 'cube.obj'
-                else:
-                    print('Unknown shape type: {}'.format(shape.type))
+            for j, pb_shape in enumerate(v.shapes):
+                filename = shape_filename(pb_shape)
+                if not filename:
                     continue
 
                 # load model
-                model = self.loader.load_model(filename)
+                shape = self.loader.load_model(filename)
 
                 if shape.has_material:
                     # set material
-                    material = Material()
-                    material.setAmbient(Vec4(*shape.material.diffuse_color))
-                    material.setDiffuse(Vec4(*shape.material.diffuse_color))
-                    material.setSpecular(Vec3(*shape.material.specular_color))
-                    material.setShininess(5.0)
-                    model.setMaterial(material, 1)
+                    material = PbMaterial(pb_shape.material)
+                    shape.setMaterial(material, 1)
+                    texture_id = pb_shape.material.diffuse_texture
                     # set texture
-                    if shape.material.diffuse_texture > -1:
-                        tex = scene_graph.texture(shape.material.diffuse_texture)
-                        model.setTexture(tex.filename)
+                    if texture_id > -1:
+                        tex = scene_graph.texture(texture_id)
+                        shape.setTexture(tex.filename)
 
                 # set relative position
-                pose = shape.pose
-                model.reparentTo(node)
-                model.setPos(*shape.pose.origin)
-                model.setQuat(Quat(*shape.pose.quat))
-                model.setScale(*shape.pose.scale)
+                pose = pb_shape.pose
+                shape.reparentTo(node)
+                shape.setPos(*pose.origin)
+                shape.setQuat(Quat(*pose.quat))
+                shape.setScale(*pose.scale)
 
     def render_frame(self, scene_state, scene_view, frame):
         """Render a scene at scene_state with a scene_view settings

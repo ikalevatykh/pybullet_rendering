@@ -1,4 +1,4 @@
-from os.path import dirname, join
+from os.path import dirname, join, abspath
 import pybullet_rendering as pr
 
 __all__ = ['shape_filename']
@@ -6,7 +6,8 @@ __all__ = ['shape_filename']
 
 def shape_filename(shape):
     if shape.type == pr.ShapeType.Mesh:
-        return shape.mesh.filename
+        filename = abspath(shape.mesh.filename)
+        return filename
 
     packagedir = dirname(pr.__path__[0])
     if shape.type == pr.ShapeType.Cube:

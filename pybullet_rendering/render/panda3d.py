@@ -17,7 +17,7 @@ from direct.showbase import Loader
 from pybullet_rendering import BaseRenderer
 from .utils import shape_filename
 
-__all__ = ['Renderer']
+__all__ = ['Renderer', 'PbMaterial']
 
 
 class Renderer(BaseRenderer):

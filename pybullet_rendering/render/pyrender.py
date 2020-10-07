@@ -227,16 +227,17 @@ class PbMaterial(pyrender.MetallicRoughnessMaterial):
 
     def __init__(self, pb_material, scene_graph):
         texture_id = pb_material.diffuse_texture
+        kwargs = {}
         if texture_id > -1:
             texture = scene_graph.texture(texture_id)
             img = Image.open(texture.filename)
             tex = pyrender.Texture(source=img, source_channels=img.mode)
+            kwargs = dict(baseColorTexture=tex, alphaMode='BLEND')
 
         super().__init__(baseColorFactor=pb_material.diffuse_color,
-                         baseColorTexture=tex,
-                         alphaMode='BLEND',
                          metallicFactor=0.5,
-                         roughnessFactor=0.5)
+                         roughnessFactor=0.5,
+                         **kwargs)
 
 
 class Loader:

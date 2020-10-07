@@ -5,6 +5,7 @@ import numpy as np
 import pyrender
 import trimesh
 
+from PIL import Image
 from pyrender import RenderFlags
 from pybullet_rendering import BaseRenderer
 from .utils import shape_filename
@@ -98,7 +99,7 @@ class Renderer(BaseRenderer):
                 model = self._loader.load(filename, body.no_cache)
                 mesh = pyrender.Mesh.from_trimesh(model)
                 if shape.has_material:
-                    material = PbMaterial(shape.material)
+                    material = PbMaterial(shape.material, scene_graph)
                     for p in mesh.primitives:
                         p.material = material
                 pose_mat = np.asarray(shape.pose.matrix).reshape(4, 4).T
@@ -224,8 +225,16 @@ class PbMaterial(pyrender.MetallicRoughnessMaterial):
     """Pybullet-compatible material wrapper
     """
 
-    def __init__(self, pb_material):
+    def __init__(self, pb_material, scene_graph):
+        texture_id = pb_material.diffuse_texture
+        if texture_id > -1:
+            texture = scene_graph.texture(texture_id)
+            img = Image.open(texture.filename)
+            tex = pyrender.Texture(source=img, source_channels=img.mode)
+
         super().__init__(baseColorFactor=pb_material.diffuse_color,
+                         baseColorTexture=tex,
+                         alphaMode='BLEND',
                          metallicFactor=0.5,
                          roughnessFactor=0.5)
 

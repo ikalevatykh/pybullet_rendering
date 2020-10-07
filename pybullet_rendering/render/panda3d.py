@@ -107,7 +107,7 @@ class Renderer(BaseRenderer):
                     texture_id = pb_shape.material.diffuse_texture
                     if texture_id > -1:
                         texture = scene_graph.texture(texture_id)
-                        shape.set_texture(texture.filename)
+                        shape.set_texture(self._loader.loadTexture(texture.filename))
             node.flatten_light()
             node.reparent_to(self.scene)
             self._node_dict[uid] = node

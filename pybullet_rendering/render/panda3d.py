@@ -7,7 +7,7 @@ from panda3d.core import FrameBufferProperties, WindowProperties
 from panda3d.core import ModelNode, NodePath
 from panda3d.core import Camera, MatrixLens, PerspectiveLens
 from panda3d.core import AmbientLight, DirectionalLight, Spotlight
-from panda3d.core import Material, Texture
+from panda3d.core import Material, Texture, TextureStage
 from panda3d.core import RescaleNormalAttrib, AntialiasAttrib
 from panda3d.core import loadPrcFileData
 
@@ -39,8 +39,8 @@ class Renderer(BaseRenderer):
         BaseRenderer.__init__(self)
         self.return_to_bullet = True
         # renderer
-        loadPrcFileData("",
-            f"""
+        loadPrcFileData(
+            "", f"""
             gl-compile-and-execute 1
             gl-use-bindless-texture 1
             prefer-texture-buffer 1
@@ -107,7 +107,10 @@ class Renderer(BaseRenderer):
                     texture_id = pb_shape.material.diffuse_texture
                     if texture_id > -1:
                         texture = scene_graph.texture(texture_id)
-                        shape.set_texture(self._loader.loadTexture(texture.filename))
+                        ts = TextureStage('ts')
+                        ts.setMode(TextureStage.MDecal)
+                        node.setTransparency(True)
+                        shape.set_texture(ts, self._loader.loadTexture(texture.filename))
             node.flatten_light()
             node.reparent_to(self.scene)
             self._node_dict[uid] = node

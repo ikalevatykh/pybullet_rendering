@@ -186,7 +186,10 @@ class MyApp(BaseRenderer, ShowBase):
                     # set texture
                     if shape.material.diffuse_texture > -1:
                         tex = scene_graph.texture(shape.material.diffuse_texture)
-                        model.setTexture(self.loader.loadTexture(tex.filename))
+                        ts = TextureStage('ts')
+                        ts.setMode(TextureStage.MDecal)
+                        node.setTransparency(True)
+                        model.setTexture(ts, self.loader.loadTexture(tex.filename))
 
                 # set relative position
                 pose = shape.pose

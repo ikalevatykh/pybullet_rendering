@@ -60,7 +60,7 @@ class Renderer(BaseRenderer):
         """
         self._flags = values
 
-    def enable_shadows(self, enabel: bool):
+    def enable_shadows(self, enable: bool):
         """Enable shadows
         """
         shadow_flags = RenderFlags.SHADOWS_DIRECTIONAL | RenderFlags.SHADOWS_SPOT | RenderFlags.SHADOWS_POINT

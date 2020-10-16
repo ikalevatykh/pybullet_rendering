@@ -64,7 +64,7 @@ plugin = RenderingPlugin(client_id, renderer)
 w, h, rgba, depth, _ = pb.getCameraImage(w, h, projectionMatrix=..., viewMatrix=...)
 ```
 
-### Implement your oun renderer in Python
+### Implement your own renderer in Python
 
 Your renderer should be inherited from the `BaseRenderer` class and implement its `update_scene` and `render_frame` methods. To get an idea of their parameters, see examples and tests.
 

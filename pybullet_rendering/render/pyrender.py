@@ -147,14 +147,14 @@ class Renderer(BaseRenderer):
 
 
 class EnableableNode(pyrender.Node):
-    """Helper node wrapper
+    """Helper node wrapper for nodes that can be switched on or off.
     """
 
-    def __init__(self, scene: pyrender.Scene, **kwargs):
+    def __init__(self, scene: pyrender.Scene, parent_node=None, **kwargs):
         super().__init__(**kwargs)
         self._scene = scene
         self._enabled = True
-        scene.add_node(self)
+        scene.add_node(self, parent_node=parent_node)
 
     @property
     def is_enabled(self):

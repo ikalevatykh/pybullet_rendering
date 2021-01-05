@@ -16,9 +16,7 @@ RenderingInterface::RenderingInterface()
     resetAll();
 }
 
-RenderingInterface::~RenderingInterface()
-{
-}
+RenderingInterface::~RenderingInterface() {}
 
 void RenderingInterface::setRenderer(const std::shared_ptr<render::BaseRenderer>& renderer)
 {
@@ -309,8 +307,8 @@ int RenderingInterface::loadTextureFile(const char* filename, struct CommonFileI
 
 int RenderingInterface::registerTexture(unsigned char* texels, int width, int height)
 {
-    const auto data = std::vector<unsigned char>{texels, texels + width * height * 4};
-    return _sceneGraph.registerTexture(scene::Texture{data, {width, height}});
+    auto data = std::vector<unsigned char>{texels, texels + width * height * 4};
+    return _sceneGraph.registerTexture(scene::Texture{std::move(data), {width, height}});
 }
 
 void RenderingInterface::setProjectiveTextureMatrices(const float viewMatrix[16],

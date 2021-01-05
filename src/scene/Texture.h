@@ -6,10 +6,79 @@
 
 #include <utils/math.h>
 
+#include <memory>
 #include <string>
 #include <vector>
 
 namespace scene {
+
+/**
+ * @brief Bitmap data
+ *
+ */
+class Bitmap
+{
+  public:
+    /**
+     * @brief Construct a new Bitmap object
+     *
+     */
+    Bitmap() noexcept : _size{0, 0} {};
+
+    /**
+     * @brief Construct a new Bitmap object
+     *
+     * @param data - bitmap data
+     * @param size - bitmap size
+     */
+    Bitmap(std::vector<uint8_t>&& data, const Size2i& size) : _data(std::move(data)), _size(size) {}
+
+    /**
+     * @brief Bitmap rows
+     */
+    ssize_t rows() const { return _size[0]; }
+
+    /**
+     * @brief Bitmap cols
+     */
+    ssize_t cols() const { return _size[1]; }
+
+    /**
+     * @brief Bitmap channels
+     */
+    ssize_t channels() const
+    {
+        auto sq = _size[0] * _size[1];
+        return sq > 0 ? _data.size() / sq : 0;
+    }
+
+    /**
+     * @brief Bitmap data
+     */
+    const std::vector<uint8_t>& data() const { return _data; }
+
+    /**
+     * @brief Comparison operators
+     */
+    bool operator==(const Bitmap& other) const
+    {
+        return _size == other._size && _data == other._data;
+    }
+    bool operator!=(const Bitmap& other) const { return !(*this == other); }
+
+    /**
+     * @brief Serialization
+     */
+    template <class Archive>
+    void serialize(Archive& ar)
+    {
+        ar(_size, _data);
+    }
+
+  private:
+    Size2i _size;
+    std::vector<uint8_t> _data;
+};
 
 /**
  * @brief Texture description
@@ -22,14 +91,14 @@ class Texture
      * @brief Construct a new Texture object
      *
      */
-    Texture() noexcept {};
+    Texture() noexcept = default;
 
     /**
      * @brief Construct a new Texture object
      *
      * @param filename - image file name on disk
      */
-    explicit Texture(const std::string& filename) : _inMemory(false), _filename(filename) {}
+    explicit Texture(const std::string& filename) : _filename{filename} {}
 
     /**
      * @brief Construct a new Texture object
@@ -37,15 +106,10 @@ class Texture
      * @param data - texture bitmap data
      * @param size - texture size
      */
-    Texture(std::vector<uint8_t> data, const Size2i& size)
-        : _inMemory(true), _data(std::move(data)), _size(size)
+    Texture(std::vector<uint8_t>&& data, const Size2i& size)
+        : _bitmap(std::make_shared<Bitmap>(std::move(data), size))
     {
     }
-
-    /**
-     * @brief @brief Flag: texture bitmap stored in memory or on a disk
-     */
-    bool inMemory() const { return _inMemory; }
 
     /**
      * @brief Texture file name
@@ -55,24 +119,20 @@ class Texture
     /**
      * @brief Texture bitmap (in memory texture)
      */
-    const std::vector<uint8_t>& data() const { return _data; }
-
-    /**
-     * @brief Texture size (in memory texture)
-     */
-    const Size2i& size() const { return _size; }
+    const std::shared_ptr<Bitmap>& bitmap() const { return _bitmap; }
 
     /**
      * @brief @brief Texture empty
      */
-    bool empty() const { return !_inMemory && _filename.empty(); }
+    bool empty() const { return _filename.empty() && !_bitmap; }
 
     /**
      * @brief Comparison operators
      */
     bool operator==(const Texture& other) const
     {
-        return _inMemory == other._inMemory && _filename == other._filename;
+        return _filename == other._filename &&
+               (_bitmap == other._bitmap || _bitmap && other._bitmap && *_bitmap == *other._bitmap);
     }
     bool operator!=(const Texture& other) const { return !(*this == other); }
 
@@ -82,14 +142,12 @@ class Texture
     template <class Archive>
     void serialize(Archive& ar)
     {
-        ar(_inMemory, _filename, _data, _size);
+        ar(_filename, _bitmap);
     }
 
   private:
-    bool _inMemory;
     std::string _filename;
-    std::vector<uint8_t> _data;
-    Size2i _size;
+    std::shared_ptr<Bitmap> _bitmap;
 };
 
 } // namespace scene

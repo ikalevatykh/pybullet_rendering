@@ -34,9 +34,20 @@ void bindSceneGraph(py::module& m)
         .def(py::self == py::self)
         .def(py::self != py::self);
 
+    // Bitmap
+    py::class_<Bitmap>(m, "Bitmap", pybind11::buffer_protocol())
+        .def_buffer([](Bitmap& im) -> pybind11::buffer_info {
+            return pybind11::buffer_info(const_cast<unsigned char*>(im.data().data()),
+                                         sizeof(unsigned char),
+                                         pybind11::format_descriptor<unsigned char>::format(), ssize_t(3),
+                                         {im.rows(), im.cols(), im.channels()},
+                                         {im.channels() * im.cols(), im.channels(), ssize_t(1)});
+        });
+
     // Texture
     py::class_<Texture>(m, "Texture")
         .def_property_readonly("filename", &Texture::filename, "Texture filename")
+        .def_property_readonly("bitmap", &Texture::bitmap, "Texture bitmap")
         // operators
         .def(py::self == py::self)
         .def(py::self != py::self);

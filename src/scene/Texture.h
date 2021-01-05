@@ -5,7 +5,6 @@
 #pragma once
 
 #include <utils/math.h>
-#include <utils/serialization.h>
 
 #include <string>
 #include <vector>
@@ -77,13 +76,20 @@ class Texture
     }
     bool operator!=(const Texture& other) const { return !(*this == other); }
 
+    /**
+     * @brief Serialization
+     */
+    template <class Archive>
+    void serialize(Archive& ar)
+    {
+        ar(_inMemory, _filename, _data, _size);
+    }
+
   private:
     bool _inMemory;
     std::string _filename;
     std::vector<uint8_t> _data;
     Size2i _size;
-
-    NOP_STRUCTURE(Texture, _inMemory, _filename, _data, _size);
 };
 
 } // namespace scene

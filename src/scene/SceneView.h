@@ -4,10 +4,10 @@
 
 #pragma once
 
+#include <utils/math.h>
+
 #include "Camera.h"
 #include "Light.h"
-#include <utils/math.h>
-#include <utils/serialization.h>
 
 namespace scene {
 
@@ -80,6 +80,15 @@ class SceneView
     }
     bool operator!=(const SceneView& other) const { return !(*this == other); }
 
+    /**
+     * @brief Serialization
+     */
+    template <class Archive>
+    void serialize(Archive& ar)
+    {
+        ar(_viewport, _bg_color, _bg_texture, _flags, _camera, _light);
+    }
+
   private:
     Size2i _viewport;
     Color3f _bg_color;
@@ -88,8 +97,6 @@ class SceneView
     Camera _camera;
     Light _light;
     /** @todo: projective texture matrices */
-
-    NOP_STRUCTURE(SceneView, _viewport, _bg_color, _bg_texture, _flags, _camera, _light);
 };
 
 } // namespace scene

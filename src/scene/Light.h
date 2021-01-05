@@ -5,7 +5,6 @@
 #pragma once
 
 #include <utils/math.h>
-#include <utils/serialization.h>
 
 namespace scene {
 
@@ -149,6 +148,16 @@ class Light
     }
     bool operator!=(const Light& other) const { return !(*this == other); }
 
+    /**
+     * @brief Serialization
+     */
+    template <class Archive>
+    void serialize(Archive& ar)
+    {
+        ar(_type, _color, _direction, _position, _distance, _ambientCoeff, _diffuseCoeff,
+           _specularCoeff, _isShadowCaster);
+    }
+
   private:
     LightType _type = LightType::Unknown;
     Color3f _color = Color3f{0.f, 0.f, 0.f};
@@ -159,9 +168,6 @@ class Light
     float _diffuseCoeff = 1.f;
     float _specularCoeff = 1.f;
     bool _isShadowCaster = false;
-
-    NOP_STRUCTURE(Light, _type, _color, _direction, _position, _distance, _ambientCoeff,
-                  _diffuseCoeff, _specularCoeff, _isShadowCaster);
 };
 
 } // namespace scene

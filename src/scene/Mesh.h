@@ -5,7 +5,6 @@
 #pragma once
 
 #include <utils/math.h>
-#include <utils/serialization.h>
 
 #include <string>
 
@@ -51,11 +50,18 @@ class Mesh
     }
     bool operator!=(const Mesh& other) const { return !(*this == other); }
 
+    /**
+     * @brief Serialization
+     */
+    template <class Archive>
+    void serialize(Archive& ar)
+    {
+        ar(_inMemory, _filename);
+    }
+
   private:
     bool _inMemory;
     std::string _filename;
-
-    NOP_STRUCTURE(Mesh, _inMemory, _filename);
 };
 
 } // namespace scene

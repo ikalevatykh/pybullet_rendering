@@ -4,11 +4,10 @@
 
 #pragma once
 
-#include "Material.h"
-#include "Mesh.h"
 #include <utils/math.h>
 
-#include <utils/serialization.h>
+#include "Material.h"
+#include "Mesh.h"
 
 namespace scene {
 
@@ -58,7 +57,7 @@ class Shape
      * @brief Construct a new Shape object
      *
      * @param type - shape type
-     * @param matrix - shape poseation depending parent node
+     * @param matrix - shape position depending parent node
      */
     Shape(ShapeType type, const Affine3f& pose, const Material& material)
         : _type(type), _pose(pose), _hasMaterial(true), _material(material)
@@ -111,14 +110,21 @@ class Shape
     }
     bool operator!=(const Shape& other) const { return !(*this == other); }
 
+    /**
+     * @brief Serialization
+     */
+    template <class Archive>
+    void serialize(Archive& ar)
+    {
+        ar(_type, _pose, _hasMaterial, _material, _mesh);
+    }
+
   private:
     ShapeType _type;
     Affine3f _pose;
     bool _hasMaterial;
     Material _material;
     Mesh _mesh;
-
-    NOP_STRUCTURE(Shape, _type, _pose, _hasMaterial, _material, _mesh);
 };
 
 } // namespace scene

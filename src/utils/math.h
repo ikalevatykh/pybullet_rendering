@@ -81,6 +81,12 @@ struct Affine3f {
     }
     bool operator!=(const Affine3f& other) const { return !(*this == other); }
 
-  private:
-    NOP_STRUCTURE(Affine3f, origin, quat, scale);
+    /**
+     * @brief Serialization
+     */
+    template <class Archive>
+    void serialize(Archive& ar)
+    {
+        ar(origin, quat, scale);
+    }
 };

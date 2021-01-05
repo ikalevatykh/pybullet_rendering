@@ -5,8 +5,6 @@
 #pragma once
 
 #include "Node.h"
-// #include "SceneAssets.h"
-#include <utils/serialization.h>
 
 #include <algorithm>
 #include <map>
@@ -74,12 +72,12 @@ class SceneGraph
     }
 
     /**
-    * @brief Registered texture
-    *
-    * @param textureId - unique texture id
-    * @throw std::out_of_range - if no such element exists
-    * @return Texture
-    */
+     * @brief Registered texture
+     *
+     * @param textureId - unique texture id
+     * @throw std::out_of_range - if no such element exists
+     * @return Texture
+     */
     const Texture& texture(int textureId) const { return _textures.at(textureId); }
 
     /**
@@ -119,12 +117,19 @@ class SceneGraph
     }
     bool operator!=(const SceneGraph& other) const { return !(*this == other); }
 
+    /**
+     * @brief Serialization
+     */
+    template <class Archive>
+    void serialize(Archive& ar)
+    {
+        ar(_nodes, _textures);
+    }
+
   private:
     std::map<int, Node> _nodes;
     // assets
     std::vector<Texture> _textures;
-
-    NOP_STRUCTURE(SceneGraph, _nodes, _textures);
 };
 
 } // namespace scene

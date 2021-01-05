@@ -5,7 +5,6 @@
 #pragma once
 
 #include "Shape.h"
-#include <utils/serialization.h>
 
 #include <vector>
 
@@ -74,13 +73,20 @@ class Node
     }
     bool operator!=(const Node& other) const { return !(*this == other); }
 
+    /**
+     * @brief Serialization
+     */
+    template <class Archive>
+    void serialize(Archive& ar)
+    {
+        ar(_body, _link, _noCache, _shapes);
+    }
+
   private:
     int _body;
     int _link;
     bool _noCache;
     std::vector<Shape> _shapes;
-
-    NOP_STRUCTURE(Node, _body, _link, _noCache, _shapes);
 };
 
 } // namespace scene

@@ -5,7 +5,6 @@
 #pragma once
 
 #include <utils/math.h>
-#include <utils/serialization.h>
 
 #include <map>
 
@@ -47,7 +46,6 @@ class SceneState
      */
     int size() const { return _poses.size(); }
 
-
     const std::map<int, Affine3f>& poses() const { return _poses; }
 
     /**
@@ -73,10 +71,17 @@ class SceneState
     bool operator==(const SceneState& other) const { return _poses == other._poses; }
     bool operator!=(const SceneState& other) const { return !(*this == other); }
 
+    /**
+     * @brief Serialization
+     */
+    template <class Archive>
+    void serialize(Archive& ar)
+    {
+        ar(_poses);
+    }
+
   private:
     std::map<int, Affine3f> _poses;
-
-    NOP_STRUCTURE(SceneState, _poses);
 };
 
 } // namespace scene

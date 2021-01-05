@@ -21,14 +21,12 @@ template <class T>
 auto pickle()
 {
     return py::pickle(
-        [](const T& p) {
-            const auto& str = Serialize(p);
-            return py::bytes(str);
+        [](const T& p) { //
+            return py::bytes(BinarySerialize(p));
         },
         [](py::bytes& t) {
             auto p = T();
-            if (!Deserialize(&p, t.cast<std::string>()))
-                throw std::runtime_error("Invalid state!");
+            BinaryDeserialize(t.cast<std::string>(), p);
             return p;
         });
 }

@@ -6,7 +6,6 @@
 
 #include "Texture.h"
 #include <utils/math.h>
-#include <utils/serialization.h>
 
 namespace scene {
 
@@ -66,12 +65,19 @@ class Material
     }
     bool operator!=(const Material& other) const { return !(*this == other); }
 
+    /**
+     * @brief Serialization
+     */
+    template <class Archive>
+    void serialize(Archive& ar)
+    {
+        ar(_diffuseColor, _specularColor, _diffuseTexture);
+    }
+
   private:
     Color4f _diffuseColor;
     Color3f _specularColor;
     int _diffuseTexture;
-
-    NOP_STRUCTURE(Material, _diffuseColor, _specularColor, _diffuseTexture);
 };
 
 } // namespace scene

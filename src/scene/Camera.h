@@ -5,7 +5,6 @@
 #pragma once
 
 #include <utils/math.h>
-#include <utils/serialization.h>
 
 namespace scene {
 
@@ -58,11 +57,18 @@ class Camera
     }
     bool operator!=(const Camera& other) const { return !(*this == other); }
 
+    /**
+     * @brief Serialization
+     */
+    template <class Archive>
+    void serialize(Archive& ar)
+    {
+        ar(_projMatrix, _viewMatrix);
+    }
+
   private:
     Matrix4f _projMatrix = Matrix4f{0};
     Matrix4f _viewMatrix = Matrix4f{0};
-
-    NOP_STRUCTURE(Camera, _projMatrix, _viewMatrix);
 };
 
 } // namespace scene

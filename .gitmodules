@@ -1,6 +1,6 @@
 [submodule "src/deps/pybind11"]
 	path = src/deps/pybind11
 	url = https://github.com/pybind/pybind11.git
-[submodule "src/deps/libnop"]
-	path = src/deps/libnop
-	url = https://github.com/google/libnop.git
+[submodule "src/deps/cereal"]
+	path = src/deps/cereal
+	url = https://github.com/USCiLab/cereal.git

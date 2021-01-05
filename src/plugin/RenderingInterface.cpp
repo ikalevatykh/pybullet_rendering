@@ -36,23 +36,6 @@ void RenderingInterface::resetAll()
     _objectIndices.clear();
 }
 
-int RenderingInterface::registerShapeAndInstance(const struct b3VisualShapeData& visualShape,
-                                                 const float* vertices, int numvertices,
-                                                 const int* indices, int numIndices,
-                                                 int primitiveType, int textureId,
-                                                 int orgGraphicsUniqueId, int bodyUniqueId,
-                                                 int linkIndex)
-{
-    /// @todo: registerShapeAndInstance not implemented
-    return -1;
-}
-
-void RenderingInterface::updateShape(int shapeUniqueId, const btVector3* vertices, int numVertices,
-                                     const btVector3* normals, int numNormals)
-{
-    /// @todo: updateShape not implemented
-}
-
 int RenderingInterface::convertVisualShapes(int linkIndex, const char* pathPrefix,
                                             const btTransform& localInertiaFrame,
                                             const UrdfLink* linkPtr, const UrdfModel* urdfModel,
@@ -118,11 +101,21 @@ int RenderingInterface::convertVisualShapes(int linkIndex, const char* pathPrefi
     return -1;
 }
 
-int RenderingInterface::addVisualShape(struct b3VisualShapeData* visualShape,
-                                       struct CommonFileIOInterface* fileIO)
+int RenderingInterface::registerShapeAndInstance(const struct b3VisualShapeData& visualShape,
+                                                 const float* vertices, int numvertices,
+                                                 const int* indices, int numIndices,
+                                                 int primitiveType, int textureId,
+                                                 int orgGraphicsUniqueId, int bodyUniqueId,
+                                                 int linkIndex)
 {
-    /// @todo: addVisualShape not implemented
+    /// @todo: registerShapeAndInstance not implemented
     return -1;
+}
+
+void RenderingInterface::updateShape(int shapeUniqueId, const btVector3* vertices, int numVertices,
+                                     const btVector3* normals, int numNormals)
+{
+    /// @todo: updateShape not implemented
 }
 
 int RenderingInterface::getNumVisualShapes(int bodyUniqueId)

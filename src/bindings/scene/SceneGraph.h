@@ -102,9 +102,8 @@ void bindSceneGraph(py::module& m)
                                py::return_value_policy::reference_internal)
         .def_property_readonly("mesh", &Shape::mesh, "Mesh description",
                                py::return_value_policy::reference_internal)
-        .def_property_readonly("has_material", &Shape::hasMaterial, "Shape has material")
         .def_property("material", &Shape::material, &Shape::setMaterial, "Shape material",
-                      py::return_value_policy::reference_internal)
+                               py::return_value_policy::reference_internal)
         // operators
         .def(py::self == py::self)
         .def(py::self != py::self);

@@ -75,11 +75,6 @@ class Shape
     const std::shared_ptr<Mesh>& mesh() const { return _mesh; }
 
     /**
-     * @brief If shape has material
-     */
-    bool hasMaterial() const { return !!_material; }
-
-    /**
      * @brief Associated material
      */
     const std::shared_ptr<Material>& material() const { return _material; }

@@ -38,7 +38,7 @@ class SceneGraphTest(BaseTestCase):
         assert np.allclose(shape.pose.origin, (-3, -2, -1)
                            )  # in inertial frame
         assert np.allclose(shape.pose.quat, (1, 0, 0, 0))  # w,x,y,z
-        assert shape.has_material == True
+        assert shape.material is not None
         assert shape.material.diffuse_texture == -1
         return shape
 
@@ -66,7 +66,7 @@ class SceneGraphTest(BaseTestCase):
         assert shape.type == ShapeType.Mesh
         assert np.allclose(shape.pose.scale, [1, 2, 3])
         assert shape.mesh.filename.endswith('cube.obj')
-        assert shape.has_material == True
+        assert shape.material is not None
 
     def test_mesh_vertex_primitive(self):
         scale = [1, 2, 3]
@@ -118,7 +118,7 @@ class SceneGraphTest(BaseTestCase):
         for shape in node.shapes:
             assert shape.type == ShapeType.Mesh
             assert shape.mesh.filename.endswith('table.obj')
-            assert shape.has_material == True
+            assert shape.material is not None
             assert np.allclose(shape.material.diffuse_texture, -1)
 
     def test_load_urdf_external_materials(self):
@@ -126,7 +126,7 @@ class SceneGraphTest(BaseTestCase):
                                        flags=pb.URDF_USE_MATERIAL_COLORS_FROM_MTL)
         self.client.getCameraImage(320, 240)
         uid, node = next(self.render.scene_graph.nodes.items())
-        node.shapes[0].has_material == False
+        assert node.shapes[0].material is None
 
     def test_change_diffuse_color(self):
         body_id = self.client.loadURDF("table/table.urdf")

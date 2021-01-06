@@ -175,7 +175,7 @@ class MyApp(BaseRenderer, ShowBase):
                 # load model
                 model = self.loader.load_model(filename)
 
-                if shape.has_material:
+                if shape.material is not None:
                     # set material
                     material = Material()
                     material.setAmbient(Vec4(*shape.material.diffuse_color))

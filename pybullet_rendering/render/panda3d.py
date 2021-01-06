@@ -102,7 +102,7 @@ class Renderer(BaseRenderer):
                 shape = self._loader.load_model(filename)
                 shape.set_mat(Mat4(*pb_shape.pose.matrix))
                 shape.reparent_to(node)
-                if shape.has_material:
+                if pb_shape.material is not None:
                     shape.set_material(PbMaterial(pb_shape.material), 1)
                     texture_id = pb_shape.material.diffuse_texture
                     if texture_id > -1:

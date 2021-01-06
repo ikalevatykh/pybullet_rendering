@@ -110,19 +110,7 @@ inline scene::Shape makeShape(const UrdfShape& urdfShape, const UrdfMaterial& ur
                                     textureId};
 
     const auto& urdfGeometry = urdfShape.m_geometry;
-    if (URDF_GEOM_MESH == urdfGeometry.m_type) {
-        const auto pose = makePose(frame, urdfGeometry.m_meshScale);
-        const bool hasMaterial = !(flags & URDF_USE_MATERIAL_COLORS_FROM_MTL);
-        if (urdfGeometry.m_meshFileType == UrdfGeometry::MEMORY_VERTICES) {
-            const auto mesh = scene::Mesh{getMeshData(urdfGeometry)};
-            return scene::Shape{mesh, pose, hasMaterial, material};
-        }
-        else {
-            const auto mesh = scene::Mesh{urdfGeometry.m_meshFileName};
-            return scene::Shape{mesh, pose, hasMaterial, material};
-        }
-    }
-    else if (URDF_GEOM_BOX == urdfGeometry.m_type) {
+    if (URDF_GEOM_BOX == urdfGeometry.m_type) {
         const auto pose = makePose(frame, urdfGeometry.m_boxSize);
         return scene::Shape{scene::ShapeType::Cube, pose, material};
     }
@@ -153,6 +141,19 @@ inline scene::Shape makeShape(const UrdfShape& urdfShape, const UrdfMaterial& ur
         }
         const auto pose = makePose(frame, {1, 1, 1});
         return scene::Shape{scene::ShapeType::Plane, pose, material};
+    }
+    else if (URDF_GEOM_MESH == urdfGeometry.m_type) {
+        const auto pose = makePose(frame, urdfGeometry.m_meshScale);
+        const bool hasMaterial = !(flags & URDF_USE_MATERIAL_COLORS_FROM_MTL);
+        const auto mesh = urdfGeometry.m_meshFileType == UrdfGeometry::MEMORY_VERTICES
+                              ? scene::Mesh{getMeshData(urdfGeometry)}
+                              : scene::Mesh{urdfGeometry.m_meshFileName};
+        return scene::Shape{mesh, pose, hasMaterial, material};
+    }
+    else if (URDF_GEOM_HEIGHTFIELD == urdfGeometry.m_type) {
+        const auto pose = makePose(frame, {1.0, 1.0, 1.0});
+        const auto mesh = scene::Mesh{getMeshData(urdfGeometry)};
+        return scene::Shape{mesh, pose, true, material};
     }
 
     return scene::Shape{};

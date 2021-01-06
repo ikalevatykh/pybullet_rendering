@@ -8,12 +8,20 @@ from .base_test_case import BaseTestCase
 
 class SceneGraphTest(BaseTestCase):
 
-    def _test_primitive(self, **kwargs):
-        viss_id = self.client.createVisualShape(**kwargs)
-        body_id = self.client.createMultiBody(baseVisualShapeIndex=viss_id,
-                                              baseInertialFramePosition=(
-                                                  3, 2, 1),
-                                              baseInertialFrameOrientation=(0, 0, 0, 1))  # x,y,z,w
+    def _test_primitive(self, collision=False, **kwargs):
+        if collision:
+            col_id = self.client.createCollisionShape(**kwargs)
+            vis_id = -1
+        else:
+            vis_id = self.client.createVisualShape(**kwargs)
+            col_id = -1
+
+        body_id = self.client.createMultiBody(
+            baseCollisionShapeIndex=col_id,
+            baseVisualShapeIndex=vis_id,
+            baseInertialFramePosition=(3, 2, 1),
+            baseInertialFrameOrientation=(0, 0, 0, 1))  # x,y,z,w
+
         self.client.getCameraImage(320, 240)
 
         assert self.render.scene_graph
@@ -82,6 +90,19 @@ class SceneGraphTest(BaseTestCase):
         assert np.allclose(shape.mesh.data.indices, indices)
         assert np.allclose(shape.mesh.data.uvs, uvs)
         assert np.allclose(shape.mesh.data.normals, normals)
+
+    def test_heightfield_primitive(self):
+        shape = self._test_primitive(collision=True,
+                                     shapeType=pb.GEOM_HEIGHTFIELD,
+                                     meshScale=[.5, .5, 2.5],
+                                     fileName="heightmaps/ground0.txt",
+                                     heightfieldTextureScaling=128)
+        assert shape.type == ShapeType.Mesh
+        assert shape.mesh.data is not None
+        assert shape.mesh.data.vertices.shape == (960000, 3)
+        assert shape.mesh.data.uvs.shape == (960000, 2)
+        assert shape.mesh.data.normals.shape == (960000, 3)
+        assert shape.mesh.data.indices.shape == (960000,)
 
     def test_load_urdf(self):
         body_id = self.client.loadURDF("table/table.urdf")

@@ -23,7 +23,8 @@ enum class ShapeType
     Cube,
     Sphere,
     Cylinder,
-    Capsule
+    Capsule,
+    Heightfield
 };
 
 /**
@@ -37,30 +38,19 @@ class Shape
      * @brief Construct a new Scene Object object
      *
      */
-    Shape() : _type(ShapeType::Unknown), _hasMaterial(false) {}
-
-    /**
-     * @brief Construct a new Shape object
-     *
-     * @param mesh - mesh
-     * @param pose - shape position depending parent node
-     * @param hasMaterial - shape has material
-     * @param material - shape material
-     */
-    Shape(const Mesh& mesh, const Affine3f& pose, bool hasMaterial, const Material& material)
-        : _type(ShapeType::Mesh), _mesh(mesh), _pose(pose), _hasMaterial(hasMaterial),
-          _material(material)
-    {
-    }
+    Shape() noexcept : _type(ShapeType::Unknown) {}
 
     /**
      * @brief Construct a new Shape object
      *
      * @param type - shape type
-     * @param matrix - shape position depending parent node
+     * @param pose - shape position depending parent node
+     * @param material - shape material
+     * @param mesh - shape mesh (optional)
      */
-    Shape(ShapeType type, const Affine3f& pose, const Material& material)
-        : _type(type), _pose(pose), _hasMaterial(true), _material(material)
+    Shape(ShapeType type, const Affine3f& pose, const std::shared_ptr<Material>& material,
+          const std::shared_ptr<Mesh>& mesh = nullptr)
+        : _type(type), _pose(pose), _material(material), _mesh(mesh)
     {
     }
 
@@ -82,31 +72,29 @@ class Shape
     /**
      * @brief Shape mesh description (only for ShapeType::Mesh shape)
      */
-    const Mesh& mesh() const { return _mesh; }
+    const std::shared_ptr<Mesh>& mesh() const { return _mesh; }
 
     /**
      * @brief If shape has material
      */
-    bool hasMaterial() const { return _hasMaterial; }
+    bool hasMaterial() const { return !!_material; }
 
     /**
      * @brief Associated material
      */
-    const Material& material() const { return _material; }
+    const std::shared_ptr<Material>& material() const { return _material; }
     /** @overload */
-    void setMaterial(const Material& material)
-    {
-        _hasMaterial = true;
-        _material = material;
-    }
+    void setMaterial(const std::shared_ptr<Material>& material) { _material = material; }
 
     /**
      * @brief Comparison operators
      */
     bool operator==(const Shape& other) const
     {
-        return _type == other._type && _pose == other._pose && _mesh == other._mesh &&
-               _hasMaterial == other._hasMaterial && _material == other._material;
+        return _type == other._type && _pose == other._pose &&
+               (_material == other._material ||
+                _material && other._material && *_material == *other._material) &&
+               (_mesh == other._mesh || _mesh && other._mesh && *_mesh == *other._mesh);
     }
     bool operator!=(const Shape& other) const { return !(*this == other); }
 
@@ -116,15 +104,14 @@ class Shape
     template <class Archive>
     void serialize(Archive& ar)
     {
-        ar(_type, _pose, _hasMaterial, _material, _mesh);
+        ar(_type, _pose, _material, _mesh);
     }
 
   private:
     ShapeType _type;
     Affine3f _pose;
-    bool _hasMaterial;
-    Material _material;
-    Mesh _mesh;
+    std::shared_ptr<Material> _material;
+    std::shared_ptr<Mesh> _mesh;
 };
 
 } // namespace scene

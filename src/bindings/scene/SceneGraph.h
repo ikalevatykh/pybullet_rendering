@@ -20,10 +20,11 @@ void bindSceneGraph(py::module& m)
         .value("Cube", ShapeType::Cube)
         .value("Sphere", ShapeType::Sphere)
         .value("Cylinder", ShapeType::Cylinder)
-        .value("Capsule", ShapeType::Capsule);
+        .value("Capsule", ShapeType::Capsule)
+        .value("Heightfield", ShapeType::Heightfield);
 
     // Material
-    py::class_<Material>(m, "Material")
+    py::class_<Material, std::shared_ptr<Material>>(m, "Material")
         .def_property("diffuse_color", &Material::diffuseColor, &Material::setDiffuseColor,
                       "Diffuse color")
         .def_property("specular_color", &Material::specularColor, &Material::setSpecularColor,
@@ -87,7 +88,7 @@ void bindSceneGraph(py::module& m)
         .def(py::self != py::self);
 
     // Mesh
-    py::class_<Mesh>(m, "Mesh")
+    py::class_<Mesh, std::shared_ptr<Mesh>>(m, "Mesh")
         .def_property_readonly("filename", &Mesh::filename, "Mesh filename")
         .def_property_readonly("data", &Mesh::data, "Mesh in-memory data")
         // operators

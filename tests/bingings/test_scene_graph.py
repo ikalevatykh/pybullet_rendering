@@ -97,7 +97,7 @@ class SceneGraphTest(BaseTestCase):
                                      meshScale=[.5, .5, 2.5],
                                      fileName="heightmaps/ground0.txt",
                                      heightfieldTextureScaling=128)
-        assert shape.type == ShapeType.Mesh
+        assert shape.type == ShapeType.Heightfield
         assert shape.mesh.data is not None
         assert shape.mesh.data.vertices.shape == (960000, 3)
         assert shape.mesh.data.uvs.shape == (960000, 2)

@@ -51,8 +51,8 @@ class SceneGraph
     void changeShapeTexture(int nodeId, int shapeIndex, int textureId)
     {
         auto& shape = _nodes.at(nodeId).shape(shapeIndex);
-        auto material = shape.material();
-        material.setDiffuseTexture(textureId);
+        auto material = !shape.material() ? std::make_shared<Material>() : shape.material();
+        material->setDiffuseTexture(textureId);
         shape.setMaterial(material);
     }
 
@@ -66,8 +66,8 @@ class SceneGraph
     void changeShapeColor(int nodeId, int shapeIndex, const Color4f& color)
     {
         auto& shape = _nodes.at(nodeId).shape(shapeIndex);
-        auto material = shape.material();
-        material.setDiffuseColor(color);
+        auto material = !shape.material() ? std::make_shared<Material>() : shape.material();
+        material->setDiffuseColor(color);
         shape.setMaterial(material);
     }
 

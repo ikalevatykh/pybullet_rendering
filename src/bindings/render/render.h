@@ -2,8 +2,6 @@
 
 #include "PyRenderer.h"
 
-#include <pybind11/numpy.h>
-
 void bindRender(py::module& m)
 {
     using namespace render;

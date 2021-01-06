@@ -1,5 +1,6 @@
 import unittest
 
+import numpy as np
 import pybullet as pb
 import pybullet_data
 from pybullet_utils.bullet_client import BulletClient
@@ -38,6 +39,7 @@ class BaseTestCase(unittest.TestCase):
         self.client.setAdditionalSearchPath(pybullet_data.getDataPath())
         self.render = RendererMock()
         self.plugin = RenderingPlugin(self.client, self.render)
+        self.random = np.random.RandomState(77)
 
     def tearDown(self):
         self.plugin.unload()

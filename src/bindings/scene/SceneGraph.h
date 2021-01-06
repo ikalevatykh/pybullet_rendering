@@ -5,16 +5,6 @@
 PYBIND11_MAKE_OPAQUE(std::map<int, scene::Node>);
 PYBIND11_MAKE_OPAQUE(std::vector<scene::Shape>);
 
-template <typename T>
-pybind11::array asarray(const std::vector<T>& vector, ssize_t cols, py::handle base)
-{
-    if (cols > 1)
-        return pybind11::array_t<T>({ssize_t(vector.size() / cols), cols},
-                                    vector.data(), base);
-    else
-        return pybind11::array_t<T>(ssize_t(vector.size()), vector.data(), base);
-}
-
 void bindSceneGraph(py::module& m)
 {
     using namespace scene;
@@ -66,26 +56,30 @@ void bindSceneGraph(py::module& m)
     py::class_<MeshData, std::shared_ptr<MeshData>>(m, "MeshData")
         .def_property_readonly(
             "vertices",
-            [](const std::shared_ptr<MeshData>& data) {
-                return asarray(data->vertices(), 3, py::cast(data));
+            [](const MeshData& self) {
+                return py::array_t<float>({ssize_t(self.vertices().size() / 3), ssize_t(3)},
+                                          self.vertices().data(), py::cast(self));
             },
-            "Vertices coordinates")
+            "Vertex coordinates")
         .def_property_readonly(
             "uvs",
-            [](const std::shared_ptr<MeshData>& data) {
-                return asarray(data->uvs(), 2, py::cast(data));
+            [](const MeshData& self) {
+                return py::array_t<float>({ssize_t(self.uvs().size() / 2), ssize_t(2)},
+                                          self.uvs().data(), py::cast(self));
             },
             "Vertex texture UV coordinates")
         .def_property_readonly(
             "normals",
-            [](const std::shared_ptr<MeshData>& data) {
-                return asarray(data->normals(), 3, py::cast(data));
+            [](const MeshData& self) {
+                return py::array_t<float>({ssize_t(self.normals().size() / 3), ssize_t(3)},
+                                          self.normals().data(), py::cast(self));
             },
             "Vertex normals")
         .def_property_readonly(
             "indices",
-            [](const std::shared_ptr<MeshData>& data) {
-                return asarray(data->indices(), 1, py::cast(data));
+            [](const MeshData& self) {
+                return py::array_t<int>(self.indices().size(), self.indices().data(),
+                                        py::cast(self));
             },
             "Triangle indices")
         // operators

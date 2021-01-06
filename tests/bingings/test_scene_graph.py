@@ -11,7 +11,8 @@ class SceneGraphTest(BaseTestCase):
     def _test_primitive(self, **kwargs):
         viss_id = self.client.createVisualShape(**kwargs)
         body_id = self.client.createMultiBody(baseVisualShapeIndex=viss_id,
-                                              baseInertialFramePosition=(3, 2, 1),
+                                              baseInertialFramePosition=(
+                                                  3, 2, 1),
                                               baseInertialFrameOrientation=(0, 0, 0, 1))  # x,y,z,w
         self.client.getCameraImage(320, 240)
 
@@ -26,14 +27,16 @@ class SceneGraphTest(BaseTestCase):
         assert len(node.shapes) == 1
         # shape
         shape = node.shapes[0]  # shapes list
-        assert np.allclose(shape.pose.origin, (-3, -2, -1))  # in inertial frame
+        assert np.allclose(shape.pose.origin, (-3, -2, -1)
+                           )  # in inertial frame
         assert np.allclose(shape.pose.quat, (1, 0, 0, 0))  # w,x,y,z
         assert shape.has_material == True
         assert shape.material.diffuse_texture == -1
         return shape
 
     def test_box_primitive(self):
-        shape = self._test_primitive(shapeType=pb.GEOM_BOX, halfExtents=[1, 2, 3])
+        shape = self._test_primitive(
+            shapeType=pb.GEOM_BOX, halfExtents=[1, 2, 3])
         assert shape.type == ShapeType.Cube
         assert np.allclose(shape.pose.scale, [2, 4, 6])
 
@@ -43,7 +46,8 @@ class SceneGraphTest(BaseTestCase):
         assert np.allclose(shape.pose.scale, [1, 1, 1])
 
     def test_cylinder_primitive(self):
-        shape = self._test_primitive(shapeType=pb.GEOM_CYLINDER, radius=1, length=2)
+        shape = self._test_primitive(
+            shapeType=pb.GEOM_CYLINDER, radius=1, length=2)
         assert shape.type == ShapeType.Cylinder
         assert np.allclose(shape.pose.scale, [1, 1, 2])
 
@@ -55,6 +59,29 @@ class SceneGraphTest(BaseTestCase):
         assert np.allclose(shape.pose.scale, [1, 2, 3])
         assert shape.mesh.filename.endswith('cube.obj')
         assert shape.has_material == True
+
+    def test_mesh_vertex_primitive(self):
+        scale = [1, 2, 3]
+        vertex_num = 100
+        faces_num = 30
+        rs = np.random.RandomState(77)
+        vertices = rs.rand(vertex_num, 3)
+        indices = rs.randint(0, vertex_num, size=faces_num*3)
+        uvs = rs.rand(vertex_num, 2)
+        normals = rs.rand(vertex_num, 3)
+        shape = self._test_primitive(shapeType=pb.GEOM_MESH,
+                                     meshScale=scale,
+                                     vertices=vertices,
+                                     indices=indices,
+                                     uvs=uvs,
+                                     normals=normals)
+        assert shape.type == ShapeType.Mesh
+        assert np.allclose(shape.pose.scale, scale)
+        assert shape.mesh.data is not None
+        assert np.allclose(shape.mesh.data.vertices, vertices)
+        assert np.allclose(shape.mesh.data.indices, indices)
+        assert np.allclose(shape.mesh.data.uvs, uvs)
+        assert np.allclose(shape.mesh.data.normals, normals)
 
     def test_load_urdf(self):
         body_id = self.client.loadURDF("table/table.urdf")
@@ -82,10 +109,12 @@ class SceneGraphTest(BaseTestCase):
 
     def test_change_diffuse_color(self):
         body_id = self.client.loadURDF("table/table.urdf")
-        self.client.changeVisualShape(body_id, -1, shapeIndex=2, rgbaColor=(1.0, 0.5, 0.2, 1.0))
+        self.client.changeVisualShape(
+            body_id, -1, shapeIndex=2, rgbaColor=(1.0, 0.5, 0.2, 1.0))
         self.client.getCameraImage(320, 240)
         uid, node = next(self.render.scene_graph.nodes.items())
-        assert np.allclose(node.shapes[2].material.diffuse_color, (1.0, 0.5, 0.2, 1.0))
+        assert np.allclose(
+            node.shapes[2].material.diffuse_color, (1.0, 0.5, 0.2, 1.0))
 
     def test_change_diffuse_texture(self):
         body_id = self.client.loadURDF("table/table.urdf")
@@ -93,7 +122,7 @@ class SceneGraphTest(BaseTestCase):
         self.client.changeVisualShape(body_id, -1, textureUniqueId=tex_uid)
         self.client.getCameraImage(320, 240)
         scene_graph = self.render.scene_graph
-        uid, node = next(scene_graph.nodes.items())
+        _uid, node = next(scene_graph.nodes.items())
         for shape in node.shapes:
             assert shape.material.diffuse_texture == tex_uid
             assert scene_graph.texture(tex_uid).filename.endswith("table.png")
@@ -103,7 +132,8 @@ class SceneGraphTest(BaseTestCase):
         self.client.getCameraImage(320, 240)
         assert self.render.materials_only == False
         # change materials
-        self.client.changeVisualShape(body_id, -1, shapeIndex=2, rgbaColor=(1, 1, 1, 1))
+        self.client.changeVisualShape(
+            body_id, -1, shapeIndex=2, rgbaColor=(1, 1, 1, 1))
         self.client.getCameraImage(320, 240)
         assert self.render.materials_only == True
 

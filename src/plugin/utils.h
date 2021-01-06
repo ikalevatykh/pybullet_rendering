@@ -38,6 +38,53 @@ inline Affine3f makePose(const btTransform& frame, const btVector3& scale)
 }
 
 /**
+ * @brief Convert UrdfGeometry to MeshData
+ *
+ * @param urdfGeometry - geometry containing the mesh data
+ * @return std::shared_ptr<scene::MeshData>
+ */
+inline std::shared_ptr<scene::MeshData> getMeshData(const UrdfGeometry& urdfGeometry)
+{
+    std::vector<float> vertices;
+    std::vector<float> uvs;
+    std::vector<float> normals;
+    std::vector<int> indices;
+
+    const int verticesCount = urdfGeometry.m_vertices.size();
+    const int uvsCount = urdfGeometry.m_uvs.size();
+    const int normalsCount = urdfGeometry.m_normals.size();
+    const int indicesCount = urdfGeometry.m_indices.size();
+
+    vertices.reserve(verticesCount * 3);
+    uvs.reserve(uvsCount * 2);
+    normals.reserve(normalsCount * 3);
+    indices.reserve(indicesCount);
+
+    for (int i = 0; i < verticesCount; ++i) {
+        const auto& vertex = urdfGeometry.m_vertices[i];
+        vertices.push_back(float(vertex.x()));
+        vertices.push_back(float(vertex.y()));
+        vertices.push_back(float(vertex.z()));
+    }
+    for (int i = 0; i < uvsCount; ++i) {
+        const auto& uv = urdfGeometry.m_uvs[i];
+        uvs.push_back(float(uv.x()));
+        uvs.push_back(float(uv.y()));
+    }
+    for (int i = 0; i < normalsCount; ++i) {
+        const auto& normal = urdfGeometry.m_normals[i];
+        normals.push_back(float(normal.x()));
+        normals.push_back(float(normal.y()));
+        normals.push_back(float(normal.z()));
+    }
+    for (int i = 0; i < indicesCount; ++i) {
+        indices.push_back(urdfGeometry.m_indices[i]);
+    }
+    return std::make_shared<scene::MeshData>(std::move(vertices), std::move(uvs),
+                                             std::move(normals), std::move(indices));
+}
+
+/**
  * @brief Convert URDF shape to internal scene::Shape description
  *
  * @param urdfShape - pybullet URDF shape description
@@ -64,13 +111,14 @@ inline scene::Shape makeShape(const UrdfShape& urdfShape, const UrdfMaterial& ur
 
     const auto& urdfGeometry = urdfShape.m_geometry;
     if (URDF_GEOM_MESH == urdfGeometry.m_type) {
+        const auto pose = makePose(frame, urdfGeometry.m_meshScale);
+        const bool hasMaterial = !(flags & URDF_USE_MATERIAL_COLORS_FROM_MTL);
         if (urdfGeometry.m_meshFileType == UrdfGeometry::MEMORY_VERTICES) {
-            /** @todo populate mesh from data */
+            const auto mesh = scene::Mesh{getMeshData(urdfGeometry)};
+            return scene::Shape{mesh, pose, hasMaterial, material};
         }
         else {
             const auto mesh = scene::Mesh{urdfGeometry.m_meshFileName};
-            const auto pose = makePose(frame, urdfGeometry.m_meshScale);
-            const bool hasMaterial = !(flags & URDF_USE_MATERIAL_COLORS_FROM_MTL);
             return scene::Shape{mesh, pose, hasMaterial, material};
         }
     }

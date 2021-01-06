@@ -5,6 +5,16 @@
 PYBIND11_MAKE_OPAQUE(std::map<int, scene::Node>);
 PYBIND11_MAKE_OPAQUE(std::vector<scene::Shape>);
 
+template <typename T>
+pybind11::array asarray(const std::vector<T>& vector, ssize_t cols, py::handle base)
+{
+    if (cols > 1)
+        return pybind11::array_t<T>({ssize_t(vector.size() / cols), cols},
+                                    vector.data(), base);
+    else
+        return pybind11::array_t<T>(ssize_t(vector.size()), vector.data(), base);
+}
+
 void bindSceneGraph(py::module& m)
 {
     using namespace scene;
@@ -35,12 +45,12 @@ void bindSceneGraph(py::module& m)
         .def(py::self != py::self);
 
     // Bitmap
-    py::class_<Bitmap>(m, "Bitmap", pybind11::buffer_protocol())
+    py::class_<Bitmap, std::shared_ptr<Bitmap>>(m, "Bitmap", pybind11::buffer_protocol())
         .def_buffer([](Bitmap& im) -> pybind11::buffer_info {
             return pybind11::buffer_info(const_cast<unsigned char*>(im.data().data()),
                                          sizeof(unsigned char),
-                                         pybind11::format_descriptor<unsigned char>::format(), ssize_t(3),
-                                         {im.rows(), im.cols(), im.channels()},
+                                         pybind11::format_descriptor<unsigned char>::format(),
+                                         ssize_t(3), {im.rows(), im.cols(), im.channels()},
                                          {im.channels() * im.cols(), im.channels(), ssize_t(1)});
         });
 
@@ -52,9 +62,40 @@ void bindSceneGraph(py::module& m)
         .def(py::self == py::self)
         .def(py::self != py::self);
 
+    // MeshData
+    py::class_<MeshData, std::shared_ptr<MeshData>>(m, "MeshData")
+        .def_property_readonly(
+            "vertices",
+            [](const std::shared_ptr<MeshData>& data) {
+                return asarray(data->vertices(), 3, py::cast(data));
+            },
+            "Vertices coordinates")
+        .def_property_readonly(
+            "uvs",
+            [](const std::shared_ptr<MeshData>& data) {
+                return asarray(data->uvs(), 2, py::cast(data));
+            },
+            "Vertex texture UV coordinates")
+        .def_property_readonly(
+            "normals",
+            [](const std::shared_ptr<MeshData>& data) {
+                return asarray(data->normals(), 3, py::cast(data));
+            },
+            "Vertex normals")
+        .def_property_readonly(
+            "indices",
+            [](const std::shared_ptr<MeshData>& data) {
+                return asarray(data->indices(), 1, py::cast(data));
+            },
+            "Triangle indices")
+        // operators
+        .def(py::self == py::self)
+        .def(py::self != py::self);
+
     // Mesh
     py::class_<Mesh>(m, "Mesh")
         .def_property_readonly("filename", &Mesh::filename, "Mesh filename")
+        .def_property_readonly("data", &Mesh::data, "Mesh in-memory data")
         // operators
         .def(py::self == py::self)
         .def(py::self != py::self);

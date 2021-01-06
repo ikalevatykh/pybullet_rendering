@@ -41,7 +41,8 @@ class BaseRenderer
      * @param sceneGraph - scene description
      * @param materialsOnly - update only shape materials
      */
-    virtual void updateScene(const scene::SceneGraph& sceneGraph, bool materialsOnly) = 0;
+    virtual void updateScene(const std::shared_ptr<scene::SceneGraph>& sceneGraph,
+                             bool materialsOnly) = 0;
 
     /**
      * @brief Render a scene at state \p sceneState with a view settings \p sceneView
@@ -52,7 +53,8 @@ class BaseRenderer
      *
      * @return True if rendered
      */
-    virtual bool renderFrame(const scene::SceneState& sceneState, const scene::SceneView& sceneView,
+    virtual bool renderFrame(const std::shared_ptr<scene::SceneState>& sceneState,
+                             const std::shared_ptr<scene::SceneView>& sceneView,
                              FrameData& outputFrame) = 0;
 };
 

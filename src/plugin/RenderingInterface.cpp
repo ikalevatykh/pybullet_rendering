@@ -12,6 +12,9 @@
 #include <TinyRenderer/tgaimage.h>
 
 RenderingInterface::RenderingInterface()
+    : _sceneGraph{std::make_shared<scene::SceneGraph>()},
+      _sceneState{std::make_shared<scene::SceneState>()}, //
+      _sceneView{std::make_shared<scene::SceneView>()}
 {
     resetAll();
 }
@@ -30,8 +33,8 @@ void RenderingInterface::resetAll()
     _flags = 0;
     _syncSceneGraph = true;
     _syncMaterials = true;
-    _sceneGraph.clear();
-    _sceneState.clear();
+    _sceneGraph->clear();
+    _sceneState->clear();
     _visualShapes.clear();
     _objectIndices.clear();
 }
@@ -63,7 +66,7 @@ int RenderingInterface::convertVisualShapes(int linkIndex, const char* pathPrefi
 
         // append a new shape to render
         const auto& shape =
-            makeShape(urdfShape, urdfMaterial, localInertiaFrame, _flags, _sceneGraph);
+            makeShape(urdfShape, urdfMaterial, localInertiaFrame, _flags, *_sceneGraph);
         if (shape.valid())
             sceneShapes.push_back(shape);
     }
@@ -81,7 +84,7 @@ int RenderingInterface::convertVisualShapes(int linkIndex, const char* pathPrefi
 
         // append a new shape to render
         const auto& shape =
-            makeShape(urdfShape, urdfMaterial, localInertiaFrame, _flags, _sceneGraph);
+            makeShape(urdfShape, urdfMaterial, localInertiaFrame, _flags, *_sceneGraph);
         if (shape.valid())
             sceneShapes.push_back(shape);
     }
@@ -90,8 +93,8 @@ int RenderingInterface::convertVisualShapes(int linkIndex, const char* pathPrefi
     if (!sceneShapes.empty()) {
         const auto nodeId = collisionObjectUid;
         const bool noCache = !(_flags & URDF_ENABLE_CACHED_GRAPHICS_SHAPES);
-        _sceneGraph.appendNode(nodeId, {bodyUniqueId, linkIndex, sceneShapes, noCache});
-        _sceneState.appendNode(nodeId);
+        _sceneGraph->appendNode(nodeId, {bodyUniqueId, linkIndex, sceneShapes, noCache});
+        _sceneState->appendNode(nodeId);
         _syncSceneGraph = true;
 
         _objectIndices.emplace(std::make_pair(bodyUniqueId, linkIndex), collisionObjectUid);
@@ -158,7 +161,7 @@ void RenderingInterface::changeRGBAColor(int bodyUniqueId, int linkIndex, int sh
                 visualShape.m_rgbaColor[j] = rgba[j];
 
             // update scene graph
-            _sceneGraph.changeShapeColor(
+            _sceneGraph->changeShapeColor(
                 collisionObjectUid, i,
                 {float(rgba[0]), float(rgba[1]), float(rgba[2]), float(rgba[3])});
             _syncMaterials = true;
@@ -191,7 +194,7 @@ void RenderingInterface::changeShapeTexture(int bodyUniqueId, int linkIndex, int
             visualShape.m_textureUniqueId = textureUniqueId;
 
             // update scene graph
-            _sceneGraph.changeShapeTexture(collisionObjectUid, i, textureUniqueId);
+            _sceneGraph->changeShapeTexture(collisionObjectUid, i, textureUniqueId);
             _syncMaterials = true;
         }
     }
@@ -199,8 +202,8 @@ void RenderingInterface::changeShapeTexture(int bodyUniqueId, int linkIndex, int
 
 void RenderingInterface::removeVisualShape(int collisionObjectUid)
 {
-    _sceneGraph.removeNode(collisionObjectUid);
-    _sceneState.removeNode(collisionObjectUid);
+    _sceneGraph->removeNode(collisionObjectUid);
+    _sceneState->removeNode(collisionObjectUid);
     _syncSceneGraph = true;
 }
 
@@ -221,12 +224,12 @@ void RenderingInterface::clearBuffers(struct TGAColor& clearColor)
     auto g = clearColor.bgra[1] / 255.f;
     auto r = clearColor.bgra[2] / 255.f;
 
-    _sceneView.setBackgroundColor({r, g, b});
+    _sceneView->setBackgroundColor({r, g, b});
 }
 
 void RenderingInterface::getWidthAndHeight(int& width, int& height)
 {
-    const auto& vp = _sceneView.viewport();
+    const auto& vp = _sceneView->viewport();
 
     width = vp[0];
     height = vp[1];
@@ -245,8 +248,8 @@ void RenderingInterface::setWidthAndHeight(int width, int height)
     _light.setSpecularCoeff(0.05);
     _light.shadowCaster(false);
 
-    _sceneView.setBackgroundColor({0.7, 0.7, 0.8});
-    _sceneView.setViewport({width, height});
+    _sceneView->setBackgroundColor({0.7, 0.7, 0.8});
+    _sceneView->setViewport({width, height});
 }
 
 void RenderingInterface::setLightDirection(float x, float y, float z)
@@ -295,13 +298,13 @@ void RenderingInterface::setFlags(int flags)
 
 int RenderingInterface::loadTextureFile(const char* filename, struct CommonFileIOInterface* fileIO)
 {
-    return _sceneGraph.registerTexture(scene::Texture{filename});
+    return _sceneGraph->registerTexture(scene::Texture{filename});
 }
 
 int RenderingInterface::registerTexture(unsigned char* texels, int width, int height)
 {
     auto data = std::vector<unsigned char>{texels, texels + width * height * 4};
-    return _sceneGraph.registerTexture(scene::Texture{std::move(data), {width, height}});
+    return _sceneGraph->registerTexture(scene::Texture{std::move(data), {width, height}});
 }
 
 void RenderingInterface::setProjectiveTextureMatrices(const float viewMatrix[16],
@@ -320,7 +323,7 @@ void RenderingInterface::syncTransform(int collisionObjectUId,
                                        const class btVector3& localScaling)
 {
     if (collisionObjectUId >= 0)
-        _sceneState.setPose(collisionObjectUId, makePose(worldTransform, localScaling));
+        _sceneState->setPose(collisionObjectUId, makePose(worldTransform, localScaling));
 }
 
 void RenderingInterface::render(const float viewMat[16], const float projMat[16])
@@ -349,9 +352,9 @@ void RenderingInterface::copyCameraImageData(unsigned char* pixelsRGBA, int rgba
         }
 
         // set standart light and camera
-        _sceneView.setLight(_light);
-        _sceneView.setCamera(_camera);
-        _sceneView.setFlags(_flags);
+        _sceneView->setLight(_light);
+        _sceneView->setCamera(_camera);
+        _sceneView->setFlags(_flags);
 
         // destination buffer
         ///@todo: partial buffers, check buffers size

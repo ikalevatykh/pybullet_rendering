@@ -48,7 +48,7 @@ void bindSceneView(py::module& m)
         .def(py::self == py::self)
         .def(py::self != py::self);
 
-    py::class_<SceneView>(m, "SceneView")
+    py::class_<SceneView, std::shared_ptr<SceneView>>(m, "SceneView")
         .def_property("viewport", &SceneView::viewport, &SceneView::setViewport, "Image size")
         .def_property("bg_color", &SceneView::backgroundColor, &SceneView::setBackgroundColor,
                       "Background color")

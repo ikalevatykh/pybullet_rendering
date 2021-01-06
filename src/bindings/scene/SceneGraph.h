@@ -126,7 +126,7 @@ void bindSceneGraph(py::module& m)
         .def(py::self != py::self);
 
     // SceneGraph
-    py::class_<SceneGraph>(m, "SceneGraph")
+    py::class_<SceneGraph, std::shared_ptr<SceneGraph>>(m, "SceneGraph")
         .def_property_readonly("nodes", &SceneGraph::nodes, "Scene nodes",
                                py::return_value_policy::reference_internal)
         .def("texture", &SceneGraph::texture, "Registered texture",

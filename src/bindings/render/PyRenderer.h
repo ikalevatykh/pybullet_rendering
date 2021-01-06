@@ -18,11 +18,11 @@ class PyRenderer : public render::BaseRenderer
      * @param sceneGraph - scene description
      * @param materialsOnly - update only shape materials
      */
-    virtual void updateScene(const scene::SceneGraph& sceneGraph, bool materialsOnly)
+    void updateScene(const std::shared_ptr<scene::SceneGraph>& sceneGraph,
+                     bool materialsOnly) override
     {
-        // use "_INT" version as a workaround to pass arguments without copying
-        PYBIND11_OVERLOAD_INT(void, render::BaseRenderer, "update_scene", &sceneGraph,
-                              &materialsOnly);
+        PYBIND11_OVERLOAD_PURE_NAME(void, render::BaseRenderer, "update_scene", updateScene,
+                                    sceneGraph, materialsOnly);
     };
 
     /**
@@ -34,11 +34,12 @@ class PyRenderer : public render::BaseRenderer
      *
      * @return True if rendered
      */
-    virtual bool renderFrame(const scene::SceneState& sceneState, const scene::SceneView& sceneView,
-                             render::FrameData& outputFrame)
+    bool renderFrame(const std::shared_ptr<scene::SceneState>& sceneState,
+                     const std::shared_ptr<scene::SceneView>& sceneView,
+                     render::FrameData& outputFrame) override
     {
-        PYBIND11_OVERLOAD_INT(bool, render::BaseRenderer, "render_frame", &sceneState, &sceneView,
-                              &outputFrame);
+        PYBIND11_OVERLOAD_PURE_NAME(bool, render::BaseRenderer, "render_frame", renderFrame,
+                                    sceneState, sceneView, outputFrame);
         return false;
     };
 };

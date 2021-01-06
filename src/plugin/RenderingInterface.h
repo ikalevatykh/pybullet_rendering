@@ -149,9 +149,9 @@ class RenderingInterface : public UrdfRenderingInterface
     int _flags;
     bool _syncSceneGraph;
     bool _syncMaterials;
-    scene::SceneGraph _sceneGraph;
-    scene::SceneState _sceneState;
-    scene::SceneView _sceneView;
+    std::shared_ptr<scene::SceneGraph> _sceneGraph;
+    std::shared_ptr<scene::SceneState> _sceneState;
+    std::shared_ptr<scene::SceneView> _sceneView;
     scene::Light _light;
     scene::Camera _camera;
 

@@ -93,7 +93,7 @@ int RenderingInterface::convertVisualShapes(int linkIndex, const char* pathPrefi
     if (!sceneShapes.empty()) {
         const auto nodeId = collisionObjectUid;
         const bool noCache = !(_flags & URDF_ENABLE_CACHED_GRAPHICS_SHAPES);
-        _sceneGraph->appendNode(nodeId, {bodyUniqueId, linkIndex, sceneShapes, noCache});
+        _sceneGraph->appendNode(nodeId, {bodyUniqueId, linkIndex, std::move(sceneShapes), noCache});
         _sceneState->appendNode(nodeId);
         _syncSceneGraph = true;
 

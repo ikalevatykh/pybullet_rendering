@@ -25,7 +25,7 @@ class Node
     /**
      * @brief Construct a new Node object
      */
-    Node(int body, int link, std::vector<Shape> shapes, bool noCache = false)
+    Node(int body, int link, std::vector<Shape>&& shapes, bool noCache = false)
         : _body(body), _link(link), _noCache(noCache), _shapes(std::move(shapes))
     {
     }

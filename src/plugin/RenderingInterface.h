@@ -154,6 +154,7 @@ class RenderingInterface : public UrdfRenderingInterface
     std::shared_ptr<scene::SceneView> _sceneView;
     scene::Light _light;
     scene::Camera _camera;
+    std::vector<std::shared_ptr<scene::Texture>> _textures;
 
     // bullet-specific data
     std::map<int, std::vector<struct b3VisualShapeData>> _visualShapes;

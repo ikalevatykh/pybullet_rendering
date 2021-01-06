@@ -20,7 +20,7 @@ class Material
      * @brief Construct a new Material object
      *
      */
-    Material() noexcept : _diffuseColor{0, 0, 0}, _specularColor{0, 0, 0}, _diffuseTexture(-1){};
+    Material() noexcept : _diffuseColor{0, 0, 0}, _specularColor{0, 0, 0} {};
 
     /**
      * @brief Construct a new Material object
@@ -29,8 +29,9 @@ class Material
      * @param specularColor - specular color
      * @param texture - texture
      */
-    Material(const Color4f& diffuse, const Color3f& specular, int textureId = -1)
-        : _diffuseColor(diffuse), _specularColor(specular), _diffuseTexture(textureId)
+    Material(const Color4f& diffuse, const Color3f& specular,
+             const std::shared_ptr<Texture>& texture = nullptr)
+        : _diffuseColor(diffuse), _specularColor(specular), _texture(texture)
     {
     }
 
@@ -51,9 +52,9 @@ class Material
     /**
      * @brief Diffuse texture
      */
-    const int diffuseTexture() const { return _diffuseTexture; }
+    const std::shared_ptr<Texture> diffuseTexture() const { return _texture; }
     /** @overload */
-    void setDiffuseTexture(int textureId) { _diffuseTexture = textureId; }
+    void setDiffuseTexture(const std::shared_ptr<Texture>& texture) { _texture = texture; }
 
     /**
      * @brief Comparison operators
@@ -61,7 +62,8 @@ class Material
     bool operator==(const Material& other) const
     {
         return _diffuseColor == other._diffuseColor && _specularColor == other._specularColor &&
-               _diffuseTexture == other._diffuseTexture;
+               (_texture == other._texture ||
+                _texture && other._texture && *_texture == *other._texture);
     }
     bool operator!=(const Material& other) const { return !(*this == other); }
 
@@ -71,13 +73,13 @@ class Material
     template <class Archive>
     void serialize(Archive& ar)
     {
-        ar(_diffuseColor, _specularColor, _diffuseTexture);
+        ar(_diffuseColor, _specularColor, _texture);
     }
 
   private:
     Color4f _diffuseColor;
     Color3f _specularColor;
-    int _diffuseTexture;
+    std::shared_ptr<Texture> _texture;
 };
 
 } // namespace scene

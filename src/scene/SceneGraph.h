@@ -48,11 +48,11 @@ class SceneGraph
      * @param shapeIndex - shape index inside the node
      * @param texture - shape diffuse texture
      */
-    void changeShapeTexture(int nodeId, int shapeIndex, int textureId)
+    void changeShapeTexture(int nodeId, int shapeIndex, const std::shared_ptr<Texture>& texture)
     {
         auto& shape = _nodes.at(nodeId).shape(shapeIndex);
         auto material = !shape.material() ? std::make_shared<Material>() : shape.material();
-        material->setDiffuseTexture(textureId);
+        material->setDiffuseTexture(texture);
         shape.setMaterial(material);
     }
 
@@ -69,33 +69,6 @@ class SceneGraph
         auto material = !shape.material() ? std::make_shared<Material>() : shape.material();
         material->setDiffuseColor(color);
         shape.setMaterial(material);
-    }
-
-    /**
-     * @brief Registered texture
-     *
-     * @param textureId - unique texture id
-     * @throw std::out_of_range - if no such element exists
-     * @return Texture
-     */
-    const Texture& texture(int textureId) const { return _textures.at(textureId); }
-
-    /**
-     * @brief Register new texture
-     *
-     * @param Texture - texture to register
-     * @return unique texture index
-     */
-    int registerTexture(const Texture& texture)
-    {
-        auto it = std::find_if( //
-            begin(_textures), end(_textures), //
-            [&texture](const auto& t) { return t == texture; });
-        if (it != end(_textures))
-            return std::distance(begin(_textures), it);
-
-        _textures.emplace_back(texture);
-        return _textures.size() - 1;
     }
 
     /**

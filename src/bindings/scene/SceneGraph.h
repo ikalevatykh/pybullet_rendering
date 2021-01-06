@@ -46,7 +46,7 @@ void bindSceneGraph(py::module& m)
         });
 
     // Texture
-    py::class_<Texture>(m, "Texture")
+    py::class_<Texture, std::shared_ptr<Texture>>(m, "Texture")
         .def_property_readonly("filename", &Texture::filename, "Texture filename")
         .def_property_readonly("bitmap", &Texture::bitmap, "Texture bitmap")
         // operators
@@ -103,7 +103,7 @@ void bindSceneGraph(py::module& m)
         .def_property_readonly("mesh", &Shape::mesh, "Mesh description",
                                py::return_value_policy::reference_internal)
         .def_property("material", &Shape::material, &Shape::setMaterial, "Shape material",
-                               py::return_value_policy::reference_internal)
+                      py::return_value_policy::reference_internal)
         // operators
         .def(py::self == py::self)
         .def(py::self != py::self);
@@ -123,8 +123,6 @@ void bindSceneGraph(py::module& m)
     py::class_<SceneGraph, std::shared_ptr<SceneGraph>>(m, "SceneGraph")
         .def_property_readonly("nodes", &SceneGraph::nodes, "Scene nodes",
                                py::return_value_policy::reference_internal)
-        .def("texture", &SceneGraph::texture, "Registered texture",
-             py::return_value_policy::reference_internal)
         // operators
         .def(py::self == py::self)
         .def(py::self != py::self)

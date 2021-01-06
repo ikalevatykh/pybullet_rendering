@@ -37,6 +37,7 @@ void RenderingInterface::resetAll()
     _sceneState->clear();
     _visualShapes.clear();
     _objectIndices.clear();
+    _textures.clear();
 }
 
 int RenderingInterface::convertVisualShapes(int linkIndex, const char* pathPrefix,
@@ -65,8 +66,7 @@ int RenderingInterface::convertVisualShapes(int linkIndex, const char* pathPrefi
             urdfShape, urdfMaterial, localInertiaFrame, bodyUniqueId, linkIndex));
 
         // append a new shape to render
-        const auto& shape =
-            makeShape(urdfShape, urdfMaterial, localInertiaFrame, _flags, *_sceneGraph);
+        const auto& shape = makeShape(urdfShape, urdfMaterial, localInertiaFrame, _flags);
         if (shape.valid())
             sceneShapes.push_back(shape);
     }
@@ -83,8 +83,7 @@ int RenderingInterface::convertVisualShapes(int linkIndex, const char* pathPrefi
         urdfMaterial.m_matColor.m_specularColor = {1.0, 1.0, 1.0};
 
         // append a new shape to render
-        const auto& shape =
-            makeShape(urdfShape, urdfMaterial, localInertiaFrame, _flags, *_sceneGraph);
+        const auto& shape = makeShape(urdfShape, urdfMaterial, localInertiaFrame, _flags);
         if (shape.valid())
             sceneShapes.push_back(shape);
     }
@@ -194,7 +193,9 @@ void RenderingInterface::changeShapeTexture(int bodyUniqueId, int linkIndex, int
             visualShape.m_textureUniqueId = textureUniqueId;
 
             // update scene graph
-            _sceneGraph->changeShapeTexture(collisionObjectUid, i, textureUniqueId);
+            _sceneGraph->changeShapeTexture(collisionObjectUid, i,
+                                            textureUniqueId < 0 ? std::shared_ptr<scene::Texture>()
+                                                                : _textures.at(textureUniqueId));
             _syncMaterials = true;
         }
     }
@@ -298,13 +299,15 @@ void RenderingInterface::setFlags(int flags)
 
 int RenderingInterface::loadTextureFile(const char* filename, struct CommonFileIOInterface* fileIO)
 {
-    return _sceneGraph->registerTexture(scene::Texture{filename});
+    _textures.push_back(std::make_shared<scene::Texture>(filename));
+    return int(_textures.size()) - 1;
 }
 
 int RenderingInterface::registerTexture(unsigned char* texels, int width, int height)
 {
     auto data = std::vector<unsigned char>{texels, texels + width * height * 4};
-    return _sceneGraph->registerTexture(scene::Texture{std::move(data), {width, height}});
+    _textures.push_back(std::make_shared<scene::Texture>(std::move(data), Size2i{width, height}));
+    return int(_textures.size()) - 1;
 }
 
 void RenderingInterface::setProjectiveTextureMatrices(const float viewMatrix[16],

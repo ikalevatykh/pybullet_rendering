@@ -94,21 +94,19 @@ inline std::shared_ptr<scene::MeshData> getMeshData(const UrdfGeometry& geometry
  * @return scene::Shape
  */
 inline scene::Shape makeShape(const UrdfShape& urdfShape, const UrdfMaterial& urdfMaterial,
-                              const btTransform& localInertiaFrame, int flags,
-                              scene::SceneGraph& graph)
+                              const btTransform& localInertiaFrame, int flags)
 {
     using namespace scene;
     auto frame = localInertiaFrame.inverse() * urdfShape.m_linkLocalFrame;
 
-    const auto& fname = urdfMaterial.m_textureFilename;
-    const int textureId = fname.empty() ? -1 : graph.registerTexture(Texture{fname});
+    const auto& filename = urdfMaterial.m_textureFilename;
+    const auto& diff = urdfMaterial.m_matColor.m_rgbaColor;
+    const auto& spec = urdfMaterial.m_matColor.m_specularColor;
 
-    const auto& d = urdfMaterial.m_matColor.m_rgbaColor;
-    const auto& s = urdfMaterial.m_matColor.m_specularColor;
-
-    auto material =
-        std::make_shared<Material>(Color4f{float(d[0]), float(d[1]), float(d[2]), float(d[3])},
-                                   Color3f{float(s[0]), float(s[1]), float(s[2])}, textureId);
+    auto material = std::make_shared<Material>( //
+        Color4f{float(diff[0]), float(diff[1]), float(diff[2]), float(diff[3])},
+        Color3f{float(spec[0]), float(spec[1]), float(spec[2])},
+        filename.empty() ? nullptr : std::make_shared<Texture>(filename));
 
     const auto& geometry = urdfShape.m_geometry;
     if (URDF_GEOM_BOX == geometry.m_type) {

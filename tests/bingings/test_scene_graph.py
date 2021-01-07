@@ -39,7 +39,7 @@ class SceneGraphTest(BaseTestCase):
         np.testing.assert_almost_equal(
             shape.pose.quat, (1, 0, 0, 0))  # w,x,y,z
         self.assertIsNotNone(shape.material)
-        self.assertEqual(shape.material.diffuse_texture, -1)
+        self.assertIsNone(shape.material.diffuse_texture)
         return shape
 
     def test_box_primitive(self):
@@ -121,7 +121,7 @@ class SceneGraphTest(BaseTestCase):
             self.assertEqual(shape.type, ShapeType.Mesh)
             self.assertTrue(shape.mesh.filename.endswith('table.obj'))
             self.assertIsNotNone(shape.material)
-            self.assertEqual(shape.material.diffuse_texture, -1)
+            self.assertIsNone(shape.material.diffuse_texture)
 
     def test_load_urdf_external_materials(self):
         self.client.loadURDF("table/table.urdf",
@@ -139,7 +139,7 @@ class SceneGraphTest(BaseTestCase):
         np.testing.assert_almost_equal(
             node.shapes[2].material.diffuse_color, (1.0, 0.5, 0.2, 1.0))
 
-    def test_change_diffuse_texture(self):
+    def test_change_texture(self):
         body_id = self.client.loadURDF("table/table.urdf")
         tex_uid = self.client.loadTexture("table/table.png")
         self.client.changeVisualShape(body_id, -1, textureUniqueId=tex_uid)
@@ -147,9 +147,10 @@ class SceneGraphTest(BaseTestCase):
         scene_graph = self.render.scene_graph
         _uid, node = next(scene_graph.nodes.items())
         for shape in node.shapes:
-            self.assertEqual(shape.material.diffuse_texture, tex_uid)
-            tex = scene_graph.texture(tex_uid)
-            self.assertTrue(tex.filename.endswith("table.png"))
+            self.assertIsNotNone(shape.material)
+            self.assertIsNotNone(shape.material.diffuse_texture)
+            filename = shape.material.diffuse_texture.filename
+            self.assertTrue(filename.endswith("table.png"))
 
     def test_update_materials_only(self):
         body_id = self.client.loadURDF("table/table.urdf")

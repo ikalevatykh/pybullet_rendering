@@ -38,12 +38,24 @@ void bindSceneView(py::module& m)
         .def(py::self != py::self);
 
     py::class_<Camera>(m, "Camera")
-        .def_property("proj_mat", &Camera::projMatrix, &Camera::setProjMatrix,
-                      py::return_value_policy::reference_internal, "Camera projection matrix")
-        .def_property("view_mat", &Camera::viewMatrix, &Camera::setViewMatrix,
-                      py::return_value_policy::reference_internal, "Camera view matrix")
-        .def_property_readonly("pose_mat", &Camera::poseMatrix,
-                               py::return_value_policy::reference_internal, "Camera pose matrix")
+        .def_property_readonly(
+            "projection_matrix",
+            [](const Camera& self) {
+                return py::array_t<float>({4, 4}, self.projMatrix().data(), py::cast(self));
+            },
+            "Camera projection matrix")
+        .def_property_readonly(
+            "view_matrix",
+            [](const Camera& self) {
+                return py::array_t<float>({4, 4}, self.viewMatrix().data(), py::cast(self));
+            },
+            "Camera view matrix")
+        .def_property_readonly(
+            "pose_matrix",
+            [](const Camera& self) {
+                return py::array_t<float>({4, 4}, self.poseMatrix().data());
+            },
+            "Pose matrix")
         // operators
         .def(py::self == py::self)
         .def(py::self != py::self);

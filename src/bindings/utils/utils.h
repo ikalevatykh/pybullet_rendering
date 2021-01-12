@@ -22,6 +22,7 @@ void bindUtils(py::module& m)
         // operators
         .def(py::self == py::self)
         .def(py::self != py::self);
+
 }
 
 template <class T>

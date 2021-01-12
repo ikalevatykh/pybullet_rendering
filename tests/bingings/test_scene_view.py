@@ -11,8 +11,8 @@ class SceneViewTest(BaseTestCase):
         width, height = 320, 240
         shadow = True
         flags = 0xAFAF
-        projectionMatrix = list(self.random.random_sample((4, 4)).flatten())
-        viewMatrix = list(self.random.random_sample((4, 4)).flatten())
+        projectionMatrix = self.random.random_sample((4, 4))
+        viewMatrix = self.random.random_sample((4, 4))
         lightDirection = self.random.random_sample(3)
         lightColor = self.random.random_sample(3)
         lightDistance = self.random.random_sample()
@@ -23,8 +23,8 @@ class SceneViewTest(BaseTestCase):
         ret = self.client.getCameraImage(  #
             width,
             height,
-            projectionMatrix=projectionMatrix,
-            viewMatrix=viewMatrix,
+            projectionMatrix=projectionMatrix.ravel(),
+            viewMatrix=viewMatrix.ravel(),
             lightDirection=lightDirection,
             lightColor=lightColor,
             lightDistance=lightDistance,
@@ -36,7 +36,7 @@ class SceneViewTest(BaseTestCase):
 
         self.assertIsNotNone(self.render.scene_view)
 
-        #flags
+        # flags
         self.assertEqual(self.render.scene_view.flags, flags)
 
         # viewport
@@ -45,16 +45,17 @@ class SceneViewTest(BaseTestCase):
 
         # camera
         camera = self.render.scene_view.camera
-        np.testing.assert_almost_equal(camera.proj_mat, projectionMatrix)
-        np.testing.assert_almost_equal(camera.view_mat, viewMatrix)
+        np.testing.assert_almost_equal(camera.projection_matrix, projectionMatrix)
+        np.testing.assert_almost_equal(camera.view_matrix, viewMatrix)
 
         # light
         light = self.render.scene_view.light
         self.assertEqual(light.type, LightType.DirectionalLight)
-        np.testing.assert_almost_equal(light.position, lightDirection)
-        np.testing.assert_almost_equal(light.direction, -np.array(lightDirection))
-        np.testing.assert_almost_equal(light.color, lightColor)
+        np.testing.assert_almost_equal(light.target, (0.0, 0.0, 0.0))
+        np.testing.assert_almost_equal(light.direction, lightDirection)
         np.testing.assert_almost_equal(light.distance, lightDistance)
+        np.testing.assert_almost_equal(light.position, -np.array(lightDirection) * lightDistance)
+        np.testing.assert_almost_equal(light.color, lightColor)
         np.testing.assert_almost_equal(light.ambient_coeff, lightAmbientCoeff)
         np.testing.assert_almost_equal(light.diffuse_coeff, lightDiffuseCoeff)
         np.testing.assert_almost_equal(light.specular_coeff, lightSpecularCoeff)

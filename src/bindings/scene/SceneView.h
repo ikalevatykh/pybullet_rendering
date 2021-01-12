@@ -18,13 +18,13 @@ void bindSceneView(py::module& m)
         .def_property_readonly("ambient_color", &Light::ambientColor, "Light ambient color")
         .def_property_readonly("diffuse_color", &Light::diffuseColor, "Light diffuse color")
         .def_property_readonly("specular_color", &Light::specularColor, "Light specular color")
-        .def_property("color", &Light::color, &Light::setColor, "Light color")
+        .def_property_readonly("position", &Light::position, "Light position in world coordinates")
+        .def_property("target", &Light::target, &Light::setTarget,
+                      "Light target position in world coordinates")
         .def_property("direction", &Light::direction, &Light::setDirection,
                       "Light direction vector in world coordinates")
-        .def_property("distance", &Light::distance, &Light::setDistance,
-                      "Light distance (DirectionalLight)")
-        .def_property("position", &Light::position, &Light::setPosition,
-                      "Light position in world coordinates")
+        .def_property("distance", &Light::distance, &Light::setDistance, "Light distance")
+        .def_property("color", &Light::color, &Light::setColor, "Light color")
         .def_property("ambient_coeff", &Light::ambientCoeff, &Light::setAmbientCoeff,
                       "Light ambient coeffitient")
         .def_property("diffuse_coeff", &Light::diffuseCoeff, &Light::setDiffuseCoeff,

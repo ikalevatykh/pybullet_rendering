@@ -45,7 +45,7 @@ class Light
      */
     Light(const Color3f& color, const Vector3f& direction, float distance)
         : _type(LightType::DirectionalLight), _color(color), _direction(direction),
-          _distance(distance), _position{0, 0, 0}
+          _distance(distance), _target{0.0, 0.0, 0.0}
     {
     }
 
@@ -64,25 +64,34 @@ class Light
     void setColor(const Color3f& color) { _color = color; }
 
     /**
-     * @brief Light direction vector in world coordinates (DirectionalLight)
+     * @brief Light direction vector in world coordinates
      */
     const Vector3f& direction() const { return _direction; }
     /** @overload */
     void setDirection(const Vector3f& direction) { _direction = direction; }
 
     /**
-     * @brief Light distance (DirectionalLight)
+     * @brief Light distance
      */
     float distance() const { return _distance; }
     /** @overload */
     void setDistance(float distance) { _distance = distance; }
 
     /**
-     * @brief Light position in world coordinates (PointLight)
+     * @brief Light target position in world coordinates
      */
-    const Vector3f& position() const { return _position; }
+    const Vector3f& target() const { return _target; }
     /** @overload */
-    void setPosition(const Vector3f& position) { _position = position; }
+    void setTarget(const Vector3f& target) { _target = target; }
+
+    /**
+     * @brief Light position in world coordinates
+     */
+    Vector3f position() const
+    {
+        return {_target[0] - _direction[0] * _distance, _target[1] - _direction[1] * _distance,
+                _target[2] - _direction[2] * _distance};
+    }
 
     /**
      * @brief Light ambient coeffitient
@@ -142,7 +151,7 @@ class Light
     bool operator==(const Light& other) const
     {
         return _type == other._type && _direction == other._direction && _color == other._color &&
-               _distance == other._distance && _position == other._position &&
+               _distance == other._distance && _target == other._target &&
                _ambientCoeff == other._ambientCoeff && _diffuseCoeff == other._diffuseCoeff &&
                _specularCoeff == other._specularCoeff && _isShadowCaster == other._isShadowCaster;
     }
@@ -154,7 +163,7 @@ class Light
     template <class Archive>
     void serialize(Archive& ar)
     {
-        ar(_type, _color, _direction, _position, _distance, _ambientCoeff, _diffuseCoeff,
+        ar(_type, _target, _direction, _distance, _color, _ambientCoeff, _diffuseCoeff,
            _specularCoeff, _isShadowCaster);
     }
 
@@ -162,7 +171,7 @@ class Light
     LightType _type = LightType::Unknown;
     Color3f _color = Color3f{0.f, 0.f, 0.f};
     Vector3f _direction = Vector3f{0.f, 0.f, 0.f};
-    Vector3f _position = Vector3f{0.f, 0.f, 0.f};
+    Vector3f _target = Vector3f{0.f, 0.f, 0.f};
     float _distance = 0.f;
     float _ambientCoeff = 1.f;
     float _diffuseCoeff = 1.f;

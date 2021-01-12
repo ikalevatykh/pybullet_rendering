@@ -240,10 +240,10 @@ void RenderingInterface::setWidthAndHeight(int width, int height)
 {
     // just a good place to reset it
     _light.setType(scene::LightType::DirectionalLight);
-    _light.setPosition({-0.4, 0.25, 0.86});
+    _light.setTarget({0.0, 0.0, 0.0});
     _light.setDirection({0.4, -0.25, -0.86});
-    _light.setColor({1.0, 1.0, 1.0});
     _light.setDistance(2.0);
+    _light.setColor({1.0, 1.0, 1.0});
     _light.setAmbientCoeff(0.6);
     _light.setDiffuseCoeff(0.35);
     _light.setSpecularCoeff(0.05);
@@ -255,11 +255,7 @@ void RenderingInterface::setWidthAndHeight(int width, int height)
 
 void RenderingInterface::setLightDirection(float x, float y, float z)
 {
-    // lightDirection specifies the world position of the light source,
-    // the direction is from the light source position to the origin
-    // of the world frame.
-    _light.setPosition({x, y, z});
-    _light.setDirection({-x, -y, -z});
+    _light.setDirection({x, y, z});
 }
 
 void RenderingInterface::setLightColor(float r, float g, float b)

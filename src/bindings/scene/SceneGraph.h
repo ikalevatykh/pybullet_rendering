@@ -77,12 +77,12 @@ void bindSceneGraph(py::module& m)
             },
             "Vertex normals")
         .def_property_readonly(
-            "indices",
+            "faces",
             [](const MeshData& self) {
-                return py::array_t<int>(self.indices().size(), self.indices().data(),
-                                        py::cast(self));
+                return py::array_t<int>({ssize_t(self.indices().size() / 3), ssize_t(3)},
+                                        self.indices().data(), py::cast(self));
             },
-            "Triangle indices")
+            "Triangle faces")
         // operators
         .def(py::self == py::self)
         .def(py::self != py::self);

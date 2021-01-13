@@ -88,7 +88,7 @@ class SceneGraphTest(BaseTestCase):
         np.testing.assert_almost_equal(shape.pose.scale, scale)
         self.assertIsNotNone(shape.mesh.data)
         np.testing.assert_almost_equal(shape.mesh.data.vertices, vertices)
-        np.testing.assert_almost_equal(shape.mesh.data.indices, indices)
+        np.testing.assert_almost_equal(shape.mesh.data.faces.ravel(), indices)
         np.testing.assert_almost_equal(shape.mesh.data.uvs, uvs)
         np.testing.assert_almost_equal(shape.mesh.data.normals, normals)
 
@@ -104,7 +104,7 @@ class SceneGraphTest(BaseTestCase):
         self.assertEqual(shape.mesh.data.vertices.shape, (960000, 3))
         self.assertEqual(shape.mesh.data.uvs.shape, (960000, 2))
         self.assertEqual(shape.mesh.data.normals.shape, (960000, 3))
-        self.assertEqual(shape.mesh.data.indices.shape, (960000,))
+        self.assertEqual(shape.mesh.data.faces.shape, (320000, 3))
 
     def test_load_urdf(self):
         body_id = self.client.loadURDF("table/table.urdf")

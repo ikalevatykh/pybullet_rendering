@@ -44,20 +44,28 @@ class SceneGraphTest(BaseTestCase):
 
     def test_box_primitive(self):
         shape = self._test_primitive(
-            shapeType=pb.GEOM_BOX, halfExtents=[1, 2, 3])
+            shapeType=pb.GEOM_BOX, halfExtents=[1.0, 2.0, 3.0])
         self.assertEqual(shape.type, ShapeType.Cube)
-        np.testing.assert_almost_equal(shape.pose.scale, [2, 4, 6])
+        np.testing.assert_almost_equal(shape.extents, [2.0, 4.0, 6.0])
 
     def test_sphere_primitive(self):
-        shape = self._test_primitive(shapeType=pb.GEOM_SPHERE, radius=1)
+        shape = self._test_primitive(shapeType=pb.GEOM_SPHERE, radius=1.0)
         self.assertEqual(shape.type, ShapeType.Sphere)
-        np.testing.assert_almost_equal(shape.pose.scale, [1, 1, 1])
+        self.assertEqual(shape.radius, 1.0)
 
     def test_cylinder_primitive(self):
         shape = self._test_primitive(
-            shapeType=pb.GEOM_CYLINDER, radius=1, length=2)
+            shapeType=pb.GEOM_CYLINDER, radius=1.0, length=2.0)
         self.assertEqual(shape.type, ShapeType.Cylinder)
-        np.testing.assert_almost_equal(shape.pose.scale, [1, 1, 2])
+        self.assertEqual(shape.radius, 1.0)
+        self.assertEqual(shape.height, 2.0)
+
+    def test_capsule_primitive(self):
+        shape = self._test_primitive(
+            shapeType=pb.GEOM_CAPSULE, radius=1.0, length=2.0)
+        self.assertEqual(shape.type, ShapeType.Capsule)
+        self.assertEqual(shape.radius, 1.0)
+        self.assertEqual(shape.height, 2.0)
 
     def test_mesh_primitive(self):
         shape = self._test_primitive(

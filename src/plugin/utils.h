@@ -22,7 +22,7 @@
  * @param frame - transformation
  * @param scale - scale vector
  */
-inline Affine3f makePose(const btTransform& frame, const btVector3& scale)
+inline Affine3f makePose(const btTransform& frame, const btVector3& scale = {1.0, 1.0, 1.0})
 {
     const auto& origin = frame.getOrigin();
     const auto& basis = frame.getBasis();
@@ -110,25 +110,28 @@ inline scene::Shape makeShape(const UrdfShape& urdfShape, const UrdfMaterial& ur
 
     const auto& geometry = urdfShape.m_geometry;
     if (URDF_GEOM_BOX == geometry.m_type) {
-        const auto pose = makePose(frame, geometry.m_boxSize);
-        return Shape{ShapeType::Cube, pose, material};
+        const auto pose = makePose(frame);
+        const auto dx = float(geometry.m_boxSize.x());
+        const auto dy = float(geometry.m_boxSize.y());
+        const auto dz = float(geometry.m_boxSize.z());
+        return Shape{ShapeType::Cube, pose, {dx, dy, dz}, material};
     }
     else if (URDF_GEOM_SPHERE == geometry.m_type) {
-        const auto r = geometry.m_sphereRadius;
-        const auto pose = makePose(frame, {r, r, r});
-        return Shape{ShapeType::Sphere, pose, material};
+        const auto pose = makePose(frame);
+        const auto radius = float(geometry.m_sphereRadius);
+        return Shape{ShapeType::Sphere, pose, {radius}, material};
     }
     else if (URDF_GEOM_CYLINDER == geometry.m_type) {
-        const auto r = geometry.m_capsuleRadius;
-        const auto h = geometry.m_capsuleHeight;
-        const auto pose = makePose(frame, {r, r, h});
-        return Shape{ShapeType::Cylinder, pose, material};
+        const auto pose = makePose(frame);
+        const auto radius = float(geometry.m_capsuleRadius);
+        const auto height = float(geometry.m_capsuleHeight);
+        return Shape{ShapeType::Cylinder, pose, {radius, height}, material};
     }
     else if (URDF_GEOM_CAPSULE == geometry.m_type) {
-        const auto r = geometry.m_capsuleRadius;
-        const auto h = geometry.m_capsuleHeight;
-        const auto pose = makePose(frame, {r, r, h});
-        return Shape{ShapeType::Capsule, pose, material};
+        const auto pose = makePose(frame);
+        const auto radius = float(geometry.m_capsuleRadius);
+        const auto height = float(geometry.m_capsuleHeight);
+        return Shape{ShapeType::Capsule, pose, {radius, height}, material};
     }
     else if (URDF_GEOM_PLANE == geometry.m_type) {
         const auto n = geometry.m_planeNormal;
@@ -138,8 +141,8 @@ inline scene::Shape makeShape(const UrdfShape& urdfShape, const UrdfMaterial& ur
             const auto quat = btQuaternion(axis, btAsin(axis.length()));
             frame = frame * btTransform(quat);
         }
-        const auto pose = makePose(frame, {1.0, 1.0, 1.0});
-        return Shape{ShapeType::Plane, pose, material};
+        const auto pose = makePose(frame);
+        return Shape{ShapeType::Plane, pose, {0.f}, material};
     }
     else if (URDF_GEOM_MESH == geometry.m_type) {
         const auto pose = makePose(frame, geometry.m_meshScale);
@@ -148,12 +151,12 @@ inline scene::Shape makeShape(const UrdfShape& urdfShape, const UrdfMaterial& ur
                               : std::make_shared<Mesh>(geometry.m_meshFileName);
         if (flags & URDF_USE_MATERIAL_COLORS_FROM_MTL)
             material.reset();
-        return Shape{ShapeType::Mesh, pose, material, mesh};
+        return Shape{ShapeType::Mesh, pose, mesh, material};
     }
     else if (URDF_GEOM_HEIGHTFIELD == geometry.m_type) {
-        const auto pose = makePose(frame, {1.0, 1.0, 1.0});
+        const auto pose = makePose(frame);
         const auto mesh = std::make_shared<Mesh>(getMeshData(geometry));
-        return Shape{ShapeType::Heightfield, pose, material, mesh};
+        return Shape{ShapeType::Heightfield, pose, mesh, material};
     }
 
     return Shape{};

@@ -100,6 +100,9 @@ void bindSceneGraph(py::module& m)
         .def_property_readonly("type", &Shape::type, "Shape type")
         .def_property_readonly("pose", &Shape::pose, "Shape pose relative to a parent node",
                                py::return_value_policy::reference_internal)
+        .def_property_readonly("radius", &Shape::radius, "Sphere, cylinder, capsule radius")
+        .def_property_readonly("height", &Shape::height, "Cylinder, capsule height")
+        .def_property_readonly("extents", &Shape::extents, "Box extents")
         .def_property_readonly("mesh", &Shape::mesh, "Mesh description",
                                py::return_value_policy::reference_internal)
         .def_property("material", &Shape::material, &Shape::setMaterial, "Shape material",

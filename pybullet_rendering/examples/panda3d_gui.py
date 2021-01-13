@@ -1,24 +1,24 @@
+"""Simple Panda3d-based GUI app."""
+
 import argparse
+
 import numpy as np
 import pybullet as pb
 import pybullet_data
-
-from pybullet_utils.bullet_client import BulletClient
-from pybullet_rendering import RenderingPlugin, BaseRenderer, ShapeType
-
 from direct.filter.CommonFilters import CommonFilters
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
-from panda3d.core import Vec3, Vec4, Quat, Vec2
-from panda3d.core import AmbientLight, DirectionalLight
-from panda3d.core import PointLight, Spotlight, PerspectiveLens
-from panda3d.core import Material, Texture, AntialiasAttrib
-from panda3d.core import FrameBufferProperties, WindowProperties, GraphicsPipe
-from panda3d.core import loadPrcFileData
+from panda3d.core import (AmbientLight, AntialiasAttrib, DirectionalLight, FrameBufferProperties,
+                          GraphicsPipe, Material, PerspectiveLens, PointLight, Quat, Spotlight,
+                          Texture, Vec2, Vec3, Vec4, WindowProperties, loadPrcFileData)
+from pybullet_utils.bullet_client import BulletClient
 
+from pybullet_rendering import BaseRenderer, RenderingPlugin, ShapeType
+from pybullet_rendering.render.panda3d import Mesh
 
 parser = argparse.ArgumentParser("Example of using Panda3D for rendering")
-parser.add_argument("--multisamples", type=int, default=0, help="The minimum number of samples requested")
+parser.add_argument("--multisamples", type=int, default=0,
+                    help="The minimum number of samples requested")
 parser.add_argument("--srgb", action="store_true", help="Enable gamma-correction")
 parser.add_argument("--shadow_resolution", type=int, default=1024, help="Shadow buffer resolution")
 parser.add_argument("--ambient_occlusion", action="store_true", help="Ambient occlusion filter")
@@ -26,7 +26,8 @@ parser.add_argument("--debug", action="store_true", help="Debug scene mode")
 args = parser.parse_args()
 
 
-loadPrcFileData("",
+loadPrcFileData(
+    "",
     f"""
     framebuffer-srgb  {1 if args.srgb else 0}
     framebuffer-multisample {1 if args.multisamples else 0}
@@ -50,8 +51,8 @@ class MyApp(BaseRenderer, ShowBase):
         client.setAdditionalSearchPath(pybullet_data.getDataPath())
         self.client = client
 
-        # bind external renderer
-        plugin = RenderingPlugin(client, self)
+        # bind external renderer to pybullet client
+        RenderingPlugin(client, self)
 
         # setup scene
         self.nodes = {}
@@ -91,14 +92,15 @@ class MyApp(BaseRenderer, ShowBase):
             -0.299912, 0.000000, -0.000043, 0.299960, 0.000000, -0.000200
         ]
         for i, q in enumerate(Q):
-            client.setJointMotorControl2(bodyIndex=kuka,
-                                        jointIndex=i,
-                                        controlMode=pb.POSITION_CONTROL,
-                                        targetPosition=q,
-                                        targetVelocity=0,
-                                        force=100,
-                                        positionGain=0.01,
-                                        velocityGain=1)
+            client.setJointMotorControl2(
+                bodyIndex=kuka,
+                jointIndex=i,
+                controlMode=pb.POSITION_CONTROL,
+                targetPosition=q,
+                targetVelocity=0,
+                force=100,
+                positionGain=0.01,
+                velocityGain=1)
 
     def setupLights(self):
         """Setup extrnal lights"""
@@ -183,13 +185,8 @@ class MyApp(BaseRenderer, ShowBase):
                     material.setSpecular(Vec3(*shape.material.specular_color))
                     material.setShininess(5.0)
                     model.setMaterial(material, 1)
-                    # set texture
-                    if shape.material.diffuse_texture > -1:
-                        tex = scene_graph.texture(shape.material.diffuse_texture)
-                        model.setTexture(tex.filename)
 
                 # set relative position
-                pose = shape.pose
                 model.reparentTo(node)
                 model.setPos(*shape.pose.origin)
                 model.setQuat(Quat(*shape.pose.quat))

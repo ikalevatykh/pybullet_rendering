@@ -1,246 +1,271 @@
 import os
-os.environ["PYOPENGL_PLATFORM"] = 'egl'
 
 import numpy as np
 import pyrender
 import trimesh
+from PIL import Image
 
-from pyrender import RenderFlags
-from pybullet_rendering import BaseRenderer
-from .utils import shape_filename
+import pybullet_rendering as pr
 
-__all__ = ['Renderer']
+from .utils import mask_to_rgb, decompose, rgb_to_mask, primitive_mesh
+
+__all__ = ('PyrRenderer', 'PyrViewer')
 
 
-class Renderer(BaseRenderer):
-    """Pyrender based offscreen renderer
-    """
+class PyrRenderer(pr.BaseRenderer):
+    """Pyrender-based offscreen renderer."""
 
-    def __init__(self):
-        BaseRenderer.__init__(self)
-        self.return_to_bullet = True
+    def __init__(self,
+                 callback_fn=None,
+                 render_mask=True,
+                 shadows=True,
+                 platform=None,
+                 device_id=0
+                 ):
+        """Construct a Renderer.
 
-        self._scene = pyrender.Scene()
-        self._camera = PbCameraNode(self._scene)
-        self._light = PbLightNode(self._scene)
-        self._node_dict = {}
-        self._loader = Loader()
+        Keyword Arguments:
+            callback_fn {callable} -- call a function with rendered images instead of passing to bullet (default: {None})
+            render_mask {bool} -- render segmentation mask or not (default: {False})
+            shadows {bool} -- render shadows for all lights (default: {True})
+            platform {str} -- PyOpenGL platform ('egl', 'osmesa', etc.) (default: {None})
+            device_id {int} -- EGL device id if platform is 'egl' (default: {0})
+        """
+        super().__init__()
 
-        self._offscreen = pyrender.OffscreenRenderer(0, 0)
+        self._render_mask = render_mask
         self._flags = pyrender.RenderFlags.NONE
-        self._color, self._depth = None, None
+        self._callback_fn = callback_fn
 
-    @property
-    def color(self):
-        """ndarray (h, w, 4) uint8: The color buffer in RGBA format
-        """
-        return self._color
+        if shadows:
+            self._flags |= pyrender.RenderFlags.SHADOWS_DIRECTIONAL
 
-    @property
-    def depth(self):
-        """ndarray (h, w) float32: The depth buffer in linear units
-        """
-        return self._depth
+        if platform is not None:
+            os.environ["PYOPENGL_PLATFORM"] = platform
+            os.environ["EGL_DEVICE_ID"] = str(device_id)
+        self._renderer = pyrender.OffscreenRenderer(0, 0)
+        self._scene = Scene()
 
     @property
     def scene(self):
-        """pyrender.Scene: Internal scene representation
+        """Scene.
+
+        Returns:
+            Scene -- internal scene
         """
         return self._scene
 
-    @property
-    def flags(self):
-        """pyrender.RenderFlags: A render specifications
-        """
-        return self._flags
-
-    @flags.setter
-    def flags(self, values):
-        """pyrender.RenderFlags: Set render specifications
-        """
-        self._flags = values
-
-    def enable_shadows(self, enabel: bool):
-        """Enable shadows
-        """
-        shadow_flags = RenderFlags.SHADOWS_DIRECTIONAL | RenderFlags.SHADOWS_SPOT | RenderFlags.SHADOWS_POINT
-        if enable:
-            self._flags |= shadow_flags
-        else:
-            self._flags &= ~shadow_flags
-
-    def enable_pybullet_camera(self, enable: bool):
-        """Enable default pybullet camera
-        """
-        self._camera.enable(enable)
-
-    def enable_pybullet_light(self, enable: bool):
-        """Enable default pybullet light
-        """
-        self._light.enable(enable)
-
     def update_scene(self, scene_graph, materials_only):
-        """Update a scene graph
+        """Update a scene graph.
 
         Arguments:
             scene_graph {SceneGraph} -- scene description
             materials_only {bool} -- update only shape materials
         """
-        for uid, body in scene_graph.nodes.items():
-            node = pyrender.Node(uid)
-            self._scene.add_node(node)
-            self._node_dict[uid] = node
-
-            for shape in body.shapes:
-                filename = shape_filename(shape)
-                if not filename:
-                    continue
-                model = self._loader.load(filename, body.no_cache)
-                mesh = pyrender.Mesh.from_trimesh(model)
-                if shape.has_material:
-                    material = PbMaterial(shape.material)
-                    for p in mesh.primitives:
-                        p.material = material
-                pose_mat = np.asarray(shape.pose.matrix).reshape(4, 4).T
-                self._scene.add(mesh, pose=pose_mat, parent_node=node)
+        self._scene.update_graph(scene_graph, materials_only)
 
     def render_frame(self, scene_state, scene_view, frame):
-        """Render a scene at scene_state with a scene_view settings
+        """Render a scene at scene_state with a scene_view settings.
 
         Arguments:
             scene_state {SceneState} -- scene state, e.g. transformations of all objects
             scene_view {SceneView} -- view settings, e.g. camera, light, viewport parameters
             frame {FrameData} -- output image buffer
         """
-        for uid, node in self._node_dict.items():
-            pose = np.asarray(scene_state.matrix(uid)).reshape(4, 4).T
-            self._scene.set_pose(node, np.asarray(pose))
+        self._scene.update_state(scene_state)
+        self._scene.update_view(scene_view)
 
-        flags = self._flags | RenderFlags.RGBA
+        self._renderer.viewport_width = scene_view.viewport[0]
+        self._renderer.viewport_height = scene_view.viewport[1]
 
-        if self._light.is_enabled:
-            self._light.update(scene_view.light)
-            if scene_view.light.shadow_caster:
-                flags = flags | RenderFlags.SHADOWS_DIRECTIONAL
+        # render color and depth
+        flags = self._flags | pyrender.RenderFlags.RGBA
 
-        if self._camera.is_enabled:
-            self._camera.update(scene_view.camera)
+        if scene_view.light and scene_view.light.shadow_caster:
+            flags |= pyrender.RenderFlags.SHADOWS_DIRECTIONAL
 
-        self._scene.bg_color = scene_view.bg_color
-        self._offscreen.viewport_width = scene_view.viewport[0]
-        self._offscreen.viewport_height = scene_view.viewport[1]
-        ret = self._offscreen.render(self._scene, flags)
+        ret = self._renderer.render(self._scene, flags)
+        color, depth = ret if isinstance(ret, tuple) else (None, ret)
 
-        if flags & RenderFlags.DEPTH_ONLY:
-            self._color, self._depth = None, ret
+        # render segment mask
+        if not self._render_mask:
+            mask = None
         else:
-            self._color, self._depth = ret
+            flags |= pyrender.RenderFlags.SEG
+            flags &= ~pyrender.RenderFlags.RGBA
+            mask_rgb, _ = self._renderer.render(
+                self._scene, flags, self._scene._seg_node_map)
+            mask = rgb_to_mask(mask_rgb)
 
-        if self.return_to_bullet:
-            if not flags & RenderFlags.DEPTH_ONLY:
-                frame.color_img[:] = self._color
-            frame.depth_img[:] = self._depth
-            #TODO: implement mask
-            return True
+        if self._callback_fn is not None:
+            # pass result to a callback function
+            self._callback_fn(color, depth, mask)
+            return False
+
+        # pass result to bullet
+        if color is not None:
+            frame.color_img[:] = color
+        if depth is not None:
+            frame.depth_img[:] = depth
+        if mask is not None:
+            frame.mask_img[:] = mask
+        return True
+
+
+class PyrViewer(pr.BaseRenderer):
+    """Pyrender-based onscreen viewer.
+
+    Use for debug purposes only.
+    This class cannot return rendered data.
+    You should call pybullet.getCameraImage(...) to trigger window update.
+    """
+
+    def __init__(self):
+        """Construct a PyrenderViewer."""
+        super().__init__()
+        self._scene = Scene()
+        self._viewer = None
+
+    @property
+    def scene(self):
+        """Internal scene.
+
+        Returns:
+            Scene -- internal scene
+        """
+        return self._scene
+
+    def update_scene(self, scene_graph, materials_only):
+        """Update scene graph.
+
+        Arguments:
+            scene_graph {SceneGraph} -- scene description
+            materials_only {bool} -- update only shape materials
+        """
+        self._scene.update_graph(scene_graph, materials_only)
+
+    def render_frame(self, scene_state, scene_view, frame):
+        """Render scene at scene_state with a scene_view settings.
+
+        Arguments:
+            scene_state {SceneState} -- scene state, e.g. transformations of all objects
+            scene_view {SceneView} -- view settings, e.g. camera, light, viewport parameters
+            frame {FrameData} -- output image buffer
+        """
+        self._scene.update_state(scene_state)
+        self._scene.update_view(scene_view)
+
+        if self._viewer is None:
+            self._viewer = pyrender.Viewer(self._scene, run_in_thread=True)
 
         return False
 
 
-class EnableableNode(pyrender.Node):
-    """Helper node wrapper
-    """
-
-    def __init__(self, scene: pyrender.Scene, **kwargs):
-        super().__init__(**kwargs)
-        self._scene = scene
-        self._enabled = True
-        scene.add_node(self)
-
-    @property
-    def is_enabled(self):
-        return self._enabled
-
-    def enable(self, enable: bool):
-        if enable and not self._enabled:
-            self._scene.add_node(self)
-            self._enabled = True
-        elif not enable and self._enabled:
-            self._scene.remove_node(self)
-            self._enabled = False
-
-
-class PbCameraNode(EnableableNode):
-    """Pybullet-compatible camera node wrapper
-    """
-
-    def __init__(self, scene: pyrender.Scene):
-        super().__init__(scene, camera=PbCamera())
-
-    def update(self, pb_camera):
-        proj_mat = np.asarray(pb_camera.proj_mat).reshape(4, 4).T
-        pose_mat = np.asarray(pb_camera.pose_mat).reshape(4, 4).T
-        self.camera.set_projection_matrix(proj_mat)
-        self._scene.set_pose(self, pose_mat)
-
-
-class PbLightNode(EnableableNode):
-    """Pybullet-compatible light node wrapper
-    """
-
-    def __init__(self, scene: pyrender.Scene):
-        super().__init__(scene, light=pyrender.DirectionalLight())
-
-    def update(self, pb_light):
-        self._scene.ambient_light = np.asarray(pb_light.ambient_color)
-        self.light.color = pb_light.diffuse_color
-        self.light.intensity = 5.0
-
-        origin = np.asarray(pb_light.position)
-        direction = np.asarray(pb_light.direction)
-        tmp = [0, 1, 0.3] / np.linalg.norm([0, 1, 0.3])
-        forward = -(direction / np.linalg.norm(direction))
-        right = np.cross(tmp, forward)
-        up = np.cross(forward, right)
-        pose_mat = [[*up, origin[0]], [*right, origin[1]], [*forward, origin[2]], [0, 0, 0, 1]]
-        self._scene.set_pose(self, np.asarray(pose_mat))
-
-
-class PbCamera(pyrender.Camera):
-    """Pybullet-compatible camera wrapper
-    """
-
-    def set_projection_matrix(self, mat):
-        self._projection_mat = mat
-        # update camera znear, zfar for retrieving depth buffers
-        m22, m32 = -mat[2, 2], -mat[3, 2]
-        self.zfar = (2.0 * m32) / (2.0 * m22 - 2.0)
-        self.znear = ((m22 - 1.0) * self.zfar) / (m22 + 1.0)
-
-    def get_projection_matrix(self, width=None, height=None):
-        return self._projection_mat
-
-
-class PbMaterial(pyrender.MetallicRoughnessMaterial):
-    """Pybullet-compatible material wrapper
-    """
-
-    def __init__(self, pb_material):
-        super().__init__(baseColorFactor=pb_material.diffuse_color,
-                         metallicFactor=0.5,
-                         roughnessFactor=0.5)
-
-
-class Loader:
-    """Mesh loader with a cache
-    """
+class Scene(pyrender.Scene):
+    """Helper Scene wrapper."""
 
     def __init__(self):
-        self._cache = {}
+        """Construct a Scene."""
+        super().__init__()
+        self._bullet_nodes = {}
+        self._seg_node_map = {}
+        self.bg_color = (0.7, 0.7, 0.8)
+        self.ambient_light = (0.2, 0.2, 0.2)
 
-    def load(self, filename: str, no_cache=False):
-        if filename in self._cache:
-            return self._trimesh_[filename]
-        model = trimesh.load(filename)
-        if not no_cache:
-            self._cache[filename] = model
-        return model
+        self._camera_node = pyrender.Node(
+            camera=pyrender.PerspectiveCamera(np.deg2rad(60.0)),
+            translation=(0.0, -2.0, 3.0),
+            rotation=(-0.472, 0.0, 0.0, 0.882))
+        self.add_node(self._camera_node)
+
+        self._light_node = pyrender.Node(
+            light=pyrender.DirectionalLight(color=(0.8, 0.8, 0.8), intensity=5.0),
+            translation=(-0.8, -0.2, 2.0),
+            rotation=(-0.438, 0.342, -0.511, 0.655))
+        self.add_node(self._light_node)
+
+    def update_graph(self, scene_graph, materials_only):
+        """Update scene graph.
+
+        This function rebuild scene completely each time when something changed.
+        TODO: update changed nodes instead.
+
+        Arguments:
+            scene_graph {SceneGraph} -- scene description
+            materials_only {bool} -- update only shape materials
+        """
+        for uid, node in self._bullet_nodes.items():
+            self.remove_node(node)
+        self._bullet_nodes = {}
+        self._seg_node_map = {}
+
+        for uid, body in scene_graph.nodes.items():
+            node = pyrender.Node(uid)
+            self.add_node(node)
+            self._bullet_nodes[uid] = node
+
+            for shape in body.shapes:
+                if shape.material is None:
+                    material = None
+                else:
+                    material = pyrender.MetallicRoughnessMaterial(
+                        baseColorFactor=shape.material.diffuse_color,
+                        metallicFactor=0.5,
+                        roughnessFactor=0.5)
+                    texture = shape.material.diffuse_texture
+                    if texture is not None:
+                        if texture.bitmap is not None:
+                            image = Image.fromarray(texture.bitmap)
+                        else:
+                            image = Image.open(texture.filename)
+                        texture = pyrender.Texture(
+                            source=image, source_channels=image.mode)
+                        material.baseColorTexture = texture
+                        material.alphaMode = 'BLEND'
+
+                if shape.mesh is not None:
+                    data = shape.mesh.data
+                    if data is None:
+                        mesh = trimesh.load(shape.mesh.filename)
+                    else:
+                        mesh = trimesh.Trimesh(
+                            vertices=data.vertices,
+                            vertex_normals=data.normals,
+                            faces=data.faces,
+                            # visual=trimesh.visual.TextureVisuals(uv=data.uvs) TODO: cause a error
+                        )
+                        mesh.visual.uv = data.uvs
+                else:
+                    mesh = primitive_mesh(shape)
+
+                mesh = pyrender.Mesh.from_trimesh(mesh, material=material)
+                mesh_node = self.add(mesh, pose=shape.pose.matrix.T, parent_node=node)
+                self._seg_node_map[mesh_node] = mask_to_rgb(body.body, body.link)
+
+    def update_state(self, scene_state):
+        """Apply scene state.
+
+        Arguments:
+            scene_state {SceneState} -- transformations of all objects in the scene
+        """
+        for uid, node in self._bullet_nodes.items():
+            self.set_pose(node, scene_state.pose(uid).matrix.T)
+
+    def update_view(self, scene_view):
+        """Apply scene state.
+
+        Arguments:
+            scene_view {SceneView} -- view settings, e.g. camera, light, viewport parameters
+        """
+        if scene_view.light is not None:
+            self.ambient_light = scene_view.light.ambient_color
+            self._light_node.light.color = scene_view.light.diffuse_color
+            self._light_node.translation = scene_view.light.position
+
+        if scene_view.camera is not None:
+            yfov, znear, zfar, aspect = decompose(scene_view.camera.projection_matrix)
+            self._camera_node.camera.yfov = yfov
+            self._camera_node.camera.znear = znear
+            self._camera_node.camera.zfar = zfar
+            self._camera_node.camera.aspectRatio = aspect
+            self._camera_node.matrix = scene_view.camera.pose_matrix.T

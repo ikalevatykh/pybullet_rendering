@@ -9,10 +9,10 @@ from .bindings import __file__ as plugin_lib_file
 
 
 class RenderingPlugin:
-    """"A wrapper for rendering plugin"""
+    """"A wrapper for rendering plugin."""
 
     def __init__(self, client=0, renderer: BaseRenderer = None):
-        """Load plugin
+        """Load plugin.
 
         Arguments:
             physicsClientId {int or BulletClient} -- physics client
@@ -33,20 +33,31 @@ class RenderingPlugin:
                                           physicsClientId=self._client_id)
         assert retcode != -1, 'Cannot register render interface'
         # bind a renderer
+        self._renderer = None
         if renderer is not None:
             self.set_renderer(renderer)
 
+    @property
+    def renderer(self):
+        """Loaded renderer.
+
+        Returns:
+            renderer {BaseRenderer} -- loaded renderer
+        """
+        return self._renderer
+
     def set_renderer(self, renderer: BaseRenderer):
-        """Bind a renderer to a local physics client (DIRECT connection)
+        """Bind a renderer to a local physics client (DIRECT connection).
 
         Arguments:
             renderer {Renderer} -- Renderer
         """
         set_renderer(renderer, self._client_id)
+        self._renderer = renderer
 
     def unload(self):
-        """Unload plugin
-        """
+        """Unload plugin."""
         if self._plugin_id != -1:
             pb.unloadPlugin(self._plugin_id, physicsClientId=self._client_id)
             self._plugin_id = -1
+            self._renderer = None

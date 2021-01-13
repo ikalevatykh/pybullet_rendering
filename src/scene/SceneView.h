@@ -58,16 +58,16 @@ class SceneView
     /**
      * @brief Camera parameters
      */
-    const Camera& camera() const { return _camera; }
+    const std::shared_ptr<Camera>& camera() const { return _camera; }
     /** @overload */
-    void setCamera(const Camera& camera) { _camera = camera; }
+    void setCamera(const std::shared_ptr<Camera>& camera) { _camera = camera; }
 
     /**
      * @brief Light parameters
      */
-    const Light& light() const { return _light; }
+    const std::shared_ptr<Light>& light() const { return _light; }
     /** @overload */
-    void setLight(const Light& light) { _light = light; }
+    void setLight(const std::shared_ptr<Light>& light) { _light = light; }
 
     /**
      * @brief Comparison operators
@@ -76,7 +76,9 @@ class SceneView
     {
         return _viewport == other._viewport && _bg_color == other._bg_color &&
                _bg_texture == other._bg_texture && _flags == other._flags &&
-               _camera == other._camera && _light == other._light;
+               (_camera == other._camera ||
+                _camera && other._camera && *_camera == *other._camera) &&
+               (_light == other._light || _light && other._light && *_light == *other._light);
     }
     bool operator!=(const SceneView& other) const { return !(*this == other); }
 
@@ -94,8 +96,8 @@ class SceneView
     Color3f _bg_color;
     int _bg_texture;
     int _flags;
-    Camera _camera;
-    Light _light;
+    std::shared_ptr<Camera> _camera;
+    std::shared_ptr<Light> _light;
     /** @todo: projective texture matrices */
 };
 

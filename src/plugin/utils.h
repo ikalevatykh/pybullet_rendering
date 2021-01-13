@@ -209,3 +209,17 @@ inline b3VisualShapeData makeVisualShapeData(const UrdfShape& urdfShape,
 
     return shape;
 }
+
+inline std::shared_ptr<scene::Light> makeDefaultLight()
+{
+    auto light = std::make_shared<scene::Light>();
+    light->setType(scene::LightType::DirectionalLight);
+    light->setTarget({0.0, 0.0, 0.0});
+    light->setDirection({0.4, -0.25, -0.86});
+    light->setDistance(2.0);
+    light->setAmbientCoeff(0.6);
+    light->setAmbientCoeff(0.35);
+    light->setAmbientCoeff(0.05);
+    light->shadowCaster(false);
+    return light;
+}

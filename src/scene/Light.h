@@ -31,13 +31,13 @@ class Light
      * @brief Construct a new Light object
      *
      */
-    Light() noexcept {}
+    Light() noexcept = default;
 
     /**
      * @brief Construct a new Light object
      *
      */
-    Light(LightType type) : _type(type) {}
+    explicit Light(LightType type) : _type(type) {}
 
     /**
      * @brief Construct a new Directional Light

@@ -13,7 +13,7 @@ void bindSceneView(py::module& m)
         .value("DirectionalLight", LightType::DirectionalLight)
         .value("PointLight", LightType::PointLight);
 
-    py::class_<Light>(m, "Light")
+    py::class_<Light, std::shared_ptr<Light>>(m, "Light")
         .def_property_readonly("type", &Light::type, "Light type")
         .def_property_readonly("ambient_color", &Light::ambientColor, "Light ambient color")
         .def_property_readonly("diffuse_color", &Light::diffuseColor, "Light diffuse color")
@@ -37,7 +37,7 @@ void bindSceneView(py::module& m)
         .def(py::self == py::self)
         .def(py::self != py::self);
 
-    py::class_<Camera>(m, "Camera")
+    py::class_<Camera, std::shared_ptr<Camera>>(m, "Camera")
         .def_property_readonly(
             "projection_matrix",
             [](const Camera& self) {

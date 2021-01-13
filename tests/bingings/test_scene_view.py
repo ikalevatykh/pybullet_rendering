@@ -7,7 +7,7 @@ from .base_test_case import BaseTestCase
 
 class SceneViewTest(BaseTestCase):
 
-    def test_scene_view(self):
+    def test_get_camera_image(self):
         width, height = 320, 240
         shadow = True
         flags = 0xAFAF
@@ -20,7 +20,7 @@ class SceneViewTest(BaseTestCase):
         lightDiffuseCoeff = self.random.random_sample()
         lightSpecularCoeff = self.random.random_sample()
 
-        ret = self.client.getCameraImage(  #
+        _ = self.client.getCameraImage(  #
             width,
             height,
             projectionMatrix=projectionMatrix.ravel(),
@@ -60,6 +60,11 @@ class SceneViewTest(BaseTestCase):
         np.testing.assert_almost_equal(light.diffuse_coeff, lightDiffuseCoeff)
         np.testing.assert_almost_equal(light.specular_coeff, lightSpecularCoeff)
         np.testing.assert_almost_equal(light.shadow_caster, shadow)
+
+    def test_get_camera_image_default(self):
+        _ = self.client.getCameraImage(128, 128)
+        self.assertIsNone(self.render.scene_view.camera)
+        self.assertIsNone(self.render.scene_view.light)
 
     def test_scene_view_pickle(self):
         projectionMatrix = list(np.eye(4).flatten())

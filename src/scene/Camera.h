@@ -16,6 +16,21 @@ class Camera
 {
   public:
     /**
+     * @brief Construct a new Camera object
+     *
+     */
+    Camera() noexcept : _viewMatrix{0}, _projMatrix{0} {}
+
+    /**
+     * @brief Construct a new Camera object
+     *
+     */
+    Camera(const Matrix4f& viewMatrix, const Matrix4f& projMatrix)
+        : _viewMatrix{viewMatrix}, _projMatrix{projMatrix}
+    {
+    }
+
+    /**
      * @brief Camera projection 4x4 matrix
      */
     const Matrix4f& projMatrix() const { return _projMatrix; }
@@ -67,8 +82,8 @@ class Camera
     }
 
   private:
-    Matrix4f _projMatrix = Matrix4f{0};
-    Matrix4f _viewMatrix = Matrix4f{0};
+    Matrix4f _projMatrix;
+    Matrix4f _viewMatrix;
 };
 
 } // namespace scene

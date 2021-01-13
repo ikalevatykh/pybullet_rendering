@@ -238,54 +238,50 @@ void RenderingInterface::getWidthAndHeight(int& width, int& height)
 
 void RenderingInterface::setWidthAndHeight(int width, int height)
 {
-    // just a good place to reset it
-    _light.setType(scene::LightType::DirectionalLight);
-    _light.setTarget({0.0, 0.0, 0.0});
-    _light.setDirection({0.4, -0.25, -0.86});
-    _light.setDistance(2.0);
-    _light.setColor({1.0, 1.0, 1.0});
-    _light.setAmbientCoeff(0.6);
-    _light.setDiffuseCoeff(0.35);
-    _light.setSpecularCoeff(0.05);
-    _light.shadowCaster(false);
-
     _sceneView->setBackgroundColor({0.7, 0.7, 0.8});
     _sceneView->setViewport({width, height});
 }
 
 void RenderingInterface::setLightDirection(float x, float y, float z)
 {
-    _light.setDirection({x, y, z});
+    _light = !_light ? makeDefaultLight() : _light;
+    _light->setDirection({x, y, z});
 }
 
 void RenderingInterface::setLightColor(float r, float g, float b)
 {
-    _light.setColor({r, g, b});
+    _light = !_light ? makeDefaultLight() : _light;
+    _light->setColor({r, g, b});
 }
 
 void RenderingInterface::setLightDistance(float dist)
 {
-    _light.setDistance(dist);
+    _light = !_light ? makeDefaultLight() : _light;
+    _light->setDistance(dist);
 }
 
 void RenderingInterface::setLightAmbientCoeff(float ambientCoeff)
 {
-    _light.setAmbientCoeff(ambientCoeff);
+    _light = !_light ? makeDefaultLight() : _light;
+    _light->setAmbientCoeff(ambientCoeff);
 }
 
 void RenderingInterface::setLightDiffuseCoeff(float diffuseCoeff)
 {
-    _light.setDiffuseCoeff(diffuseCoeff);
+    _light = !_light ? makeDefaultLight() : _light;
+    _light->setDiffuseCoeff(diffuseCoeff);
 }
 
 void RenderingInterface::setLightSpecularCoeff(float specularCoeff)
 {
-    _light.setSpecularCoeff(specularCoeff);
+    _light = !_light ? makeDefaultLight() : _light;
+    _light->setSpecularCoeff(specularCoeff);
 }
 
 void RenderingInterface::setShadow(bool hasShadow)
 {
-    _light.shadowCaster(hasShadow);
+    _light = !_light ? makeDefaultLight() : _light;
+    _light->shadowCaster(hasShadow);
 }
 
 void RenderingInterface::setFlags(int flags)
@@ -327,8 +323,11 @@ void RenderingInterface::syncTransform(int collisionObjectUId,
 
 void RenderingInterface::render(const float viewMat[16], const float projMat[16])
 {
-    _camera.setViewMatrix(*reinterpret_cast<const Matrix4f*>(viewMat));
-    _camera.setProjMatrix(*reinterpret_cast<const Matrix4f*>(projMat));
+    _camera = std::make_shared<scene::Camera>(*reinterpret_cast<const Matrix4f*>(viewMat),
+                                              *reinterpret_cast<const Matrix4f*>(projMat));
+
+    //               _camera.setViewMatrix(*reinterpret_cast<const Matrix4f*>(viewMat));
+    // _camera.setProjMatrix(*reinterpret_cast<const Matrix4f*>(projMat));
 }
 
 void RenderingInterface::render()
@@ -350,10 +349,13 @@ void RenderingInterface::copyCameraImageData(unsigned char* pixelsRGBA, int rgba
             _syncMaterials = false;
         }
 
-        // set standart light and camera
+        // set light and camera
         _sceneView->setLight(_light);
         _sceneView->setCamera(_camera);
         _sceneView->setFlags(_flags);
+
+        _light.reset();
+        _camera.reset();
 
         // destination buffer
         ///@todo: partial buffers, check buffers size

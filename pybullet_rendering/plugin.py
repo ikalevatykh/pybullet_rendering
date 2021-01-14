@@ -43,6 +43,9 @@ class RenderingPlugin:
         self._renderer = None
         if renderer is not None:
             self.set_renderer(renderer)
+        # workaround to keep a link to the renderer on the Python side
+        if isinstance(client, BulletClient):
+            setattr(client, '_rendering_plugin', self)
 
     @property
     def renderer(self):

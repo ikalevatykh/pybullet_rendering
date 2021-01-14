@@ -1,13 +1,13 @@
 import os
 
 import numpy as np
-import pyrender
+import pyrender as pyr
 import trimesh
 from PIL import Image
 
 import pybullet_rendering as pr
 
-from .utils import mask_to_rgb, decompose, rgb_to_mask, primitive_mesh
+from .utils import decompose, mask_to_rgb, primitive_mesh, rgb_to_mask
 
 __all__ = ('PyrRenderer', 'PyrViewer')
 
@@ -34,16 +34,16 @@ class PyrRenderer(pr.BaseRenderer):
         super().__init__()
 
         self._render_mask = render_mask
-        self._flags = pyrender.RenderFlags.NONE
+        self._flags = pyr.RenderFlags.NONE
         self._callback_fn = callback_fn
 
         if shadows:
-            self._flags |= pyrender.RenderFlags.SHADOWS_DIRECTIONAL
+            self._flags |= pyr.RenderFlags.SHADOWS_DIRECTIONAL
 
         if platform is not None:
             os.environ["PYOPENGL_PLATFORM"] = platform
             os.environ["EGL_DEVICE_ID"] = str(device_id)
-        self._renderer = pyrender.OffscreenRenderer(0, 0)
+        self._renderer = pyr.OffscreenRenderer(0, 0)
         self._scene = Scene()
 
     @property
@@ -79,10 +79,10 @@ class PyrRenderer(pr.BaseRenderer):
         self._renderer.viewport_height = scene_view.viewport[1]
 
         # render color and depth
-        flags = self._flags | pyrender.RenderFlags.RGBA
+        flags = self._flags | pyr.RenderFlags.RGBA
 
         if scene_view.light and scene_view.light.shadow_caster:
-            flags |= pyrender.RenderFlags.SHADOWS_DIRECTIONAL
+            flags |= pyr.RenderFlags.SHADOWS_DIRECTIONAL
 
         ret = self._renderer.render(self._scene, flags)
         color, depth = ret if isinstance(ret, tuple) else (None, ret)
@@ -91,8 +91,8 @@ class PyrRenderer(pr.BaseRenderer):
         if not self._render_mask:
             mask = None
         else:
-            flags |= pyrender.RenderFlags.SEG
-            flags &= ~pyrender.RenderFlags.RGBA
+            flags |= pyr.RenderFlags.SEG
+            flags &= ~pyr.RenderFlags.RGBA
             mask_rgb, _ = self._renderer.render(
                 self._scene, flags, self._scene._seg_node_map)
             mask = rgb_to_mask(mask_rgb)
@@ -156,12 +156,12 @@ class PyrViewer(pr.BaseRenderer):
         self._scene.update_view(scene_view)
 
         if self._viewer is None:
-            self._viewer = pyrender.Viewer(self._scene, run_in_thread=True)
+            self._viewer = pyr.Viewer(self._scene, run_in_thread=True)
 
         return False
 
 
-class Scene(pyrender.Scene):
+class Scene(pyr.Scene):
     """Helper Scene wrapper."""
 
     def __init__(self):
@@ -172,14 +172,14 @@ class Scene(pyrender.Scene):
         self.bg_color = (0.7, 0.7, 0.8)
         self.ambient_light = (0.2, 0.2, 0.2)
 
-        self._camera_node = pyrender.Node(
-            camera=pyrender.PerspectiveCamera(np.deg2rad(60.0)),
+        self._camera_node = pyr.Node(
+            camera=pyr.PerspectiveCamera(np.deg2rad(60.0)),
             translation=(0.0, -2.0, 3.0),
             rotation=(-0.472, 0.0, 0.0, 0.882))
         self.add_node(self._camera_node)
 
-        self._light_node = pyrender.Node(
-            light=pyrender.DirectionalLight(color=(0.8, 0.8, 0.8), intensity=5.0),
+        self._light_node = pyr.Node(
+            light=pyr.DirectionalLight(color=(0.8, 0.8, 0.8), intensity=5.0),
             translation=(-0.8, -0.2, 2.0),
             rotation=(-0.438, 0.342, -0.511, 0.655))
         self.add_node(self._light_node)
@@ -200,7 +200,7 @@ class Scene(pyrender.Scene):
         self._seg_node_map = {}
 
         for uid, body in scene_graph.nodes.items():
-            node = pyrender.Node(uid)
+            node = pyr.Node(uid)
             self.add_node(node)
             self._bullet_nodes[uid] = node
 
@@ -208,37 +208,33 @@ class Scene(pyrender.Scene):
                 if shape.material is None:
                     material = None
                 else:
-                    material = pyrender.MetallicRoughnessMaterial(
+                    material = pyr.MetallicRoughnessMaterial(
                         baseColorFactor=shape.material.diffuse_color,
-                        metallicFactor=0.5,
-                        roughnessFactor=0.5)
+                        metallicFactor=0.2,
+                        roughnessFactor=0.8,
+                        alphaMode='BLEND')
                     texture = shape.material.diffuse_texture
                     if texture is not None:
                         if texture.bitmap is not None:
                             image = Image.fromarray(texture.bitmap)
                         else:
-                            image = Image.open(texture.filename)
-                        texture = pyrender.Texture(
-                            source=image, source_channels=image.mode)
+                            image = Image.open(os.path.abspath(texture.filename))
+                        texture = pyr.Texture(source=image, source_channels=image.mode)
                         material.baseColorTexture = texture
-                        material.alphaMode = 'BLEND'
 
-                if shape.mesh is not None:
-                    data = shape.mesh.data
-                    if data is None:
-                        mesh = trimesh.load(shape.mesh.filename)
-                    else:
-                        mesh = trimesh.Trimesh(
-                            vertices=data.vertices,
-                            vertex_normals=data.normals,
-                            faces=data.faces,
-                            # visual=trimesh.visual.TextureVisuals(uv=data.uvs) TODO: cause a error
-                        )
-                        mesh.visual.uv = data.uvs
-                else:
+                if shape.mesh is None:
                     mesh = primitive_mesh(shape)
+                elif shape.mesh.data is None:
+                    mesh = trimesh.load(os.path.abspath(shape.mesh.filename))
+                else:
+                    data = shape.mesh.data
+                    mesh = trimesh.Trimesh(
+                        vertices=data.vertices,
+                        vertex_normals=data.normals,
+                        faces=data.faces,
+                        visual=trimesh.visual.TextureVisuals(uv=data.uvs))
 
-                mesh = pyrender.Mesh.from_trimesh(mesh, material=material)
+                mesh = pyr.Mesh.from_trimesh(mesh, material=material)
                 mesh_node = self.add(mesh, pose=shape.pose.matrix.T, parent_node=node)
                 self._seg_node_map[mesh_node] = mask_to_rgb(body.body, body.link)
 

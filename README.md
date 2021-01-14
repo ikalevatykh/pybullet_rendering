@@ -52,19 +52,19 @@ This package provide renderers based on [Panda3D](https://www.panda3d.org/), [py
 ```python
 import pybullet as pb
 from pybullet_rendering import RenderingPlugin
-from pybullet_rendering.render.panda3d import Renderer
+from pybullet_rendering.render.panda3d import P3dRenderer
 
 client_id = pb.connect(pb.DIRECT)
 
 # bind your renderer to pybullet
-renderer = Renderer(MSAA_samples=4)
+renderer = Renderer(multisamples=4)
 plugin = RenderingPlugin(client_id, renderer)
 
 # render thru the standard pybullet API
 w, h, rgba, depth, _ = pb.getCameraImage(w, h, projectionMatrix=..., viewMatrix=...)
 ```
 
-### Implement your oun renderer in Python
+### Implement your own renderer in Python
 
 Your renderer should be inherited from the `BaseRenderer` class and implement its `update_scene` and `render_frame` methods. To get an idea of their parameters, see examples and tests.
 

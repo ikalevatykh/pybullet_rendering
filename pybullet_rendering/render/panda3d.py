@@ -7,7 +7,7 @@ from direct.showbase.ShowBase import ShowBase
 
 import pybullet_rendering as pr
 
-from .utils import depth_from_zbuffer, decompose, primitive_mesh
+from .utils import decompose, depth_from_zbuffer, primitive_mesh
 
 __all__ = ('P3dRenderer')
 
@@ -36,7 +36,7 @@ class P3dRenderer(pr.BaseRenderer):
         self._scene = Scene()
         self._renderer = Renderer(multisamples, srgb_color, show_window)
 
-    @ property
+    @property
     def scene(self):
         """Scene representation.
 
@@ -97,6 +97,8 @@ class Renderer:
         self._multisamples = multisamples
         self._srgb_color = srgb_color
         self._show_window = show_window
+
+        p3d.ConfigVariableBool('allow-incomplete-render').set_value(False)
 
         self._engine = p3d.GraphicsEngine.get_global_ptr()
         self._pipe = p3d.GraphicsPipeSelection.get_global_ptr().make_default_pipe()
@@ -382,7 +384,7 @@ class Mesh:
         """
         vformat = p3d.GeomVertexFormat.get_v3n3()
         vertices = np.column_stack((mesh.vertices, mesh.vertex_normals))
-        #TODO: uvs
+        # TODO: uvs
         return Mesh._make(vformat, vertices, mesh.faces)
 
     @staticmethod

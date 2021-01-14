@@ -2,16 +2,20 @@
 # This source code is licensed under the LGPLv3 license found in the
 # LICENSE file in the root directory of this source tree.
 
-import pybullet as pb
+from typing import Union
 
-from .bindings import BaseRenderer, set_renderer
+import pybullet as pb
+from pybullet_utils.bullet_client import BulletClient
+
+from .bindings import BaseRenderer
 from .bindings import __file__ as plugin_lib_file
+from .bindings import set_renderer
 
 
 class RenderingPlugin:
     """"A wrapper for rendering plugin."""
 
-    def __init__(self, client=0, renderer: BaseRenderer = None):
+    def __init__(self, client: Union[int, BulletClient] = 0, renderer: BaseRenderer = None):
         """Load plugin.
 
         Arguments:
@@ -21,11 +25,14 @@ class RenderingPlugin:
             renderer {BaseRenderer} -- renderer to load  (default: None)
         """
         self._client_id = client if isinstance(client, int) else client._client
+        # check the simulation world is empty
+        num_bodies = pb.getNumBodies(physicsClientId=self._client_id)
+        assert num_bodies == 0, 'Cannot load the rendering plugin: simulation world is not empty'
         # load plugin
         self._plugin_id = pb.loadPlugin(plugin_lib_file,
                                         '_RenderingPlugin',
                                         physicsClientId=self._client_id)
-        assert self._plugin_id != -1, 'Cannot load PyBullet plugin'
+        assert self._plugin_id != -1, 'Cannot load the rendering plugin'
         # workaround to connect python bindings with a physicsClientId
         retcode = pb.executePluginCommand(self._plugin_id,
                                           "register",

@@ -17,10 +17,17 @@ class RendererMock(BaseRenderer):
     def render_frame(self, scene_state, scene_view, frame):
         return False
 
+
 class PluginTest(unittest.TestCase):
 
+    def test_load_nonempty_world(self):
+        client = BulletClient(pb.DIRECT)
+        client.loadURDF("table/table.urdf")
+        with self.assertRaises(AssertionError):
+            RenderingPlugin(client, RendererMock())
+
     def test_keep_reference(self):
-        self.client = BulletClient(pb.DIRECT)
-        RenderingPlugin(self.client, RendererMock())
+        client = BulletClient(pb.DIRECT)
+        RenderingPlugin(client, RendererMock())
         gc.collect()
-        _ = self.client.getCameraImage(16, 16)
+        _ = client.getCameraImage(16, 16)

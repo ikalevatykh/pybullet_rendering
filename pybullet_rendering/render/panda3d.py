@@ -1,9 +1,5 @@
-import threading
-
 import numpy as np
 import panda3d.core as p3d
-import trimesh
-from direct.showbase.ShowBase import ShowBase
 
 import pybullet_rendering as pr
 

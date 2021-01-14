@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import panda3d.core as p3d
 
@@ -248,15 +250,13 @@ class Scene:
             self._nodes[uid] = model_np
 
             for shape in link.shapes:
-                if pr.ShapeType.Mesh == shape.type:
-                    if shape.mesh.data is not None:
-                        mesh = Mesh.from_mesh_data(shape.mesh.data)
-                    else:
-                        mesh = self._loader.load_sync(shape.mesh.filename)
-                elif pr.ShapeType.Heightfield == shape.type:
-                    mesh = Mesh.from_mesh_data(shape.mesh.data)
-                else:
+                if shape.mesh is None:
                     mesh = Mesh.from_trimesh(primitive_mesh(shape))
+                elif shape.mesh.data is None:
+                    filename = os.path.abspath(shape.mesh.filename)
+                    mesh = self._loader.load_sync(filename)
+                else:
+                    mesh = Mesh.from_mesh_data(shape.mesh.data)
 
                 mesh_np = model_np.attach_new_node(mesh)
                 mesh_np.set_mat((*shape.pose.matrix.ravel(),))
@@ -275,8 +275,8 @@ class Scene:
                         mesh_np.set_transparency(p3d.TransparencyAttrib.M_alpha)
 
                     if shape.material.diffuse_texture:
-                        texture = p3d.TexturePool.load_texture(
-                            shape.material.diffuse_texture.filename)
+                        filename = os.path.abspath(shape.material.diffuse_texture.filename)
+                        texture = p3d.TexturePool.load_texture(filename)
                         mesh_np.set_texture(texture, 1)
 
     def update_state(self, scene_state):

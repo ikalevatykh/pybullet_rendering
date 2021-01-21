@@ -29,8 +29,8 @@ def build_parser():
         "--bullet_dir",
         dest="bullet_dir",
         type=str,
-        default="",
-        required=True,
+        default=os.environ.get("BULLET_ROOT_DIR"),
+        required=False,
         help="Path to a bullet root directory",
     )
     parser.add_argument("--build-tests",

@@ -12,7 +12,7 @@ function repair_wheel {
 
 # Clone bullet
 git clone --depth 1 --branch 3.08 https://github.com/bulletphysics/bullet3.git
-BULLET_ROOT_DIR="${PWD}/bullet3"
+export BULLET_ROOT_DIR="/bullet3"
 
 # Compile wheels
 for PYBIN in /opt/python/cp3*/bin; do

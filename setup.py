@@ -118,19 +118,26 @@ class CMakeBuild(build_ext):
         print()  # Add an empty line for cleaner output
 
 
+here = os.path.abspath(os.path.dirname(__file__))
+
 # version
-exec(open('pybullet_rendering/version.py').read())
+exec(open(os.path.join(here, 'pybullet_rendering/version.py')).read())
 
 # requirements
-with open("./requirements.txt", "r") as f:
+with open(os.path.join(here, 'requirements.txt'), 'r') as f:
     requirements = [l.strip() for l in f.readlines() if len(l.strip()) > 0]
+
+# Get the long description from the README file
+with open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
+
 
 setup(
     name="pybullet_rendering",
     version=__version__,
     author="Igor Kalevatykh",
     description="A rendering plugin for PyBullet",
-    long_description="",
+    long_description=long_description,
     packages=find_packages(),
     install_requires=requirements,
     ext_modules=[CMakeExtension("pybullet_rendering.bindings", "src")],

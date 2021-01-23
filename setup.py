@@ -131,7 +131,7 @@ with open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name="pybullet_rendering",
-    version='0.6.3',
+    version='0.6.4',
     author="Igor Kalevatykh",
     author_email='kalevatykhia@gmail.com',
     description="External rendering plugin for PyBullet",

@@ -1,3 +1,5 @@
 # external requirements
 numpy
 pybullet>=3.0.8
+panda3d
+pyrender

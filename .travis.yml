@@ -21,3 +21,5 @@ deploy:
   distributions: bdist_wheel
   on:
     tags: true
+  edge:
+    branch: v1.8.45

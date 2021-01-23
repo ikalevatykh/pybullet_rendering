@@ -7,4 +7,4 @@ from .plugin import RenderingPlugin
 
 __all__ = ('BaseRenderer', 'RenderingPlugin', 'ShapeType', 'LightType')
 
-__version__ = '0.5.0'
+__version__ = '0.6.0'

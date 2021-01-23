@@ -120,9 +120,6 @@ class CMakeBuild(build_ext):
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-# version
-exec(open(os.path.join(here, 'pybullet_rendering/version.py')).read())
-
 # requirements
 with open(os.path.join(here, 'requirements.txt'), 'r') as f:
     requirements = [l.strip() for l in f.readlines() if len(l.strip()) > 0]
@@ -134,10 +131,23 @@ with open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name="pybullet_rendering",
-    version=__version__,
+    version='0.5.0',
     author="Igor Kalevatykh",
-    description="A rendering plugin for PyBullet",
+    author_email='kalevatykhia@gmail.com',
+    description="External rendering plugin for PyBullet",
     long_description=long_description,
+    long_description_content_type='text/markdown',
+    url='https://github.com/ikalevatykh/pybullet_rendering',
+    license='GPL-3.0',
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'License :: OSI Approved :: GPL-3.0 License',
+        'Operating System :: POSIX :: Linux',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: Implementation :: CPython',
+        'Topic :: Scientific/Engineering',
+    ],
+    keywords='rendering graphics 3d visualization simulation',
     packages=find_packages(),
     install_requires=requirements,
     ext_modules=[CMakeExtension("pybullet_rendering.bindings", "src")],

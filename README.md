@@ -3,13 +3,21 @@ External rendering for [PyBullet](https://github.com/bulletphysics/bullet3/) sim
 
 ## Install
 
-### Install NumPy 
+### Using pip
+
+```
+pip install pybullet_rendering
+```
+
+### From source code
+
+Install NumPy
 
 ```
 pip install numpy
 ```
 
-### Install PyBullet
+Install PyBullet from source code
 
 ```
 git clone https://github.com/bulletphysics/bullet3.git
@@ -18,7 +26,7 @@ python setup.py install
 export BULLET_ROOT_DIR="$PWD"
 ```
 
-### Install package
+Install the package
 
 ```
 cd ..
@@ -27,46 +35,51 @@ cd pybullet_rendering
 python setup.py install --bullet_dir "$BULLET_ROOT_DIR"
 ```
 
-### Run tests
+Run tests
 
 ```
 python -m unittest discover tests -v
 ```
 
-### Run examples
+## Run examples
 
 Example of using [Panda3D](https://www.panda3d.org/) for rendering in GUI mode:
 
-    python -m pybullet_rendering.examples.panda3d_gui --multisamples 8
+```
+python -m pybullet_rendering.examples.panda3d_gui --multisamples 8
+```
     
 Test performance of diferent renderers:
 
-    python -m pybullet_rendering.examples.performance
+```
+python -m pybullet_rendering.examples.performance
+```
 
 ## Renderers
 
-This package provide renderers based on [Panda3D](https://www.panda3d.org/), [pyrender](https://github.com/mmatl/pyrender), [Blender](https://www.blender.org/)(WIP)
+This package provide example renderers based on [Panda3D](https://www.panda3d.org/) and [pyrender](https://github.com/mmatl/pyrender).
 
 ### Example of usage
 
 ```python
 import pybullet as pb
 from pybullet_rendering import RenderingPlugin
-from pybullet_rendering.render.panda3d import P3dRenderer
+from pybullet_rendering.render.panda3d import P3dRenderer # panda3d-based renderer
+from pybullet_rendering.render.pyrender import PyrRenderer # pyrender-based renderer
 
 client_id = pb.connect(pb.DIRECT)
 
 # bind your renderer to pybullet
-renderer = Renderer(multisamples=4)
+renderer = P3dRenderer(multisamples=4) # or PyrRenderer(platform='egl', egl_device=1)
 plugin = RenderingPlugin(client_id, renderer)
 
 # render thru the standard pybullet API
-w, h, rgba, depth, _ = pb.getCameraImage(w, h, projectionMatrix=..., viewMatrix=...)
+w, h, rgba, depth, mask = pb.getCameraImage(w, h, projectionMatrix=..., viewMatrix=...)
 ```
 
 ### Implement your own renderer in Python
 
-Your renderer should be inherited from the `BaseRenderer` class and implement its `update_scene` and `render_frame` methods. To get an idea of their parameters, see examples and tests.
+Your renderer should inherit from the `BaseRenderer` class and implement its `update_scene` and `render_frame` methods. To get an idea of their parameters, see examples and tests.
 
 ```python
 from pybullet_rendering import BaseRenderer
@@ -74,6 +87,7 @@ from pybullet_rendering import BaseRenderer
 class MyRenderer(BaseRenderer):
 
     def __init__(self):
+        """The base class initializer have to be called first."""
         BaseRenderer.__init__(self)
 
     def update_scene(self, scene_graph, materials_only):
@@ -103,3 +117,17 @@ class MyRenderer(BaseRenderer):
             
         return False  
 ```
+
+## Citation
+If you find pybullet_rendering useful in your research, please cite the repository using the following BibTeX entry.
+```
+@Misc{kalevatykh2020pybullet_rendering,
+  author =       {Kalevatykh, Igor et al.},
+  title =        {pybullet_rendering - External rendering for the PyBullet simulator},
+  howpublished = {Github},
+  year =         {2020},
+  url =          {https://github.com/ikalevatykh/pybullet_rendering}
+}
+```
+## License
+mano_pybullet is released under the [GPLv3](https://github.com/ikalevatykh/pybullet_rendering/blob/master/LICENSE) license.

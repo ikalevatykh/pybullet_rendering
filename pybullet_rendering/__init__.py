@@ -1,7 +1,10 @@
-# Copyright (c) 2019-2020 INRIA.
-# This source code is licensed under the LGPLv3 license found in the
+# Copyright (c) 2019-2021 INRIA.
+# This source code is licensed under the GPL-3.0 license found in the
 # LICENSE file in the root directory of this source tree.
 
-from .bindings import BaseRenderer, ShapeType, LightType
+from .bindings import BaseRenderer, LightType, ShapeType
 from .plugin import RenderingPlugin
-from .version import __version__
+
+__all__ = ('BaseRenderer', 'RenderingPlugin', 'ShapeType', 'LightType')
+
+__version__ = '0.5.0'

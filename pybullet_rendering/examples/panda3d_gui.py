@@ -15,6 +15,7 @@ from pybullet_utils.bullet_client import BulletClient
 
 from pybullet_rendering import BaseRenderer, RenderingPlugin, ShapeType
 from pybullet_rendering.render.panda3d import Mesh
+from pybullet_rendering.render.utils import primitive_mesh
 
 parser = argparse.ArgumentParser("Example of using Panda3D for rendering")
 parser.add_argument("--multisamples", type=int, default=0,
@@ -165,17 +166,13 @@ class MyApp(BaseRenderer, ShowBase):
             node = self.render.attachNewNode(f'node_{k:02d}')
             self.nodes[k] = node
 
-            for j, shape in enumerate(v.shapes):
-                if shape.type == ShapeType.Mesh:
-                    filename = shape.mesh.filename
-                elif shape.type == ShapeType.Cube:
-                    filename = 'cube.obj'
-                else:
-                    print('Unknown shape type: {}'.format(shape.type))
-                    continue
-
+            for shape in v.shapes:
                 # load model
-                model = self.loader.load_model(filename)
+                if shape.type == ShapeType.Mesh:
+                    model = self.loader.load_model(shape.mesh.filename)
+                else:
+                    mesh = Mesh.from_trimesh(primitive_mesh(shape))
+                    model = node.attach_new_node(mesh)
 
                 if shape.material is not None:
                     # set material
